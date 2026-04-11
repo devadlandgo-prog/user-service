@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Registration, login, OAuth2, email verification, password management")
 public class AuthController {
@@ -52,7 +52,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
-    @PostMapping("/verify-email")
+    @PostMapping("/verify")
     @Operation(summary = "Verify email with 4-digit code")
     public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         authService.verifyEmail(request);
@@ -73,11 +73,25 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("If an account exists, a reset link has been sent", null));
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Get current logged in user")
+    public ResponseEntity<ApiResponse<UserResponse>> me(@CurrentUser UserPrincipal userPrincipal) {
+        UserResponse response = authService.getCurrentUser(userPrincipal);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
     @GetMapping("/reset-password/validate")
     @Operation(summary = "Validate password reset token")
     public ResponseEntity<ApiResponse<Void>> validateResetToken(@RequestParam String token) {
         authService.validateResetToken(token);
         return ResponseEntity.ok(ApiResponse.success("Token is valid", null));
+    }
+
+    @PostMapping("/refresh-token")
+    @Operation(summary = "Refresh access token")
+    public ResponseEntity<ApiResponse<Void>> refreshToken() {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                .body(ApiResponse.error("Refresh token endpoint is not implemented yet", "NOT_IMPLEMENTED"));
     }
 
     @PostMapping("/reset-password")

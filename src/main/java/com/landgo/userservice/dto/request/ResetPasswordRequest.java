@@ -6,5 +6,6 @@ import lombok.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ResetPasswordRequest {
     @NotBlank private String token;
-    @NotBlank @Size(min = 8) private String newPassword;
+    @NotBlank @Size(min = 8) private String password;
+    @NotBlank private String confirmPassword;
 }

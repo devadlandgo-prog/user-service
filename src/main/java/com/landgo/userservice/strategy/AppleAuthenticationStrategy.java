@@ -3,7 +3,6 @@ package com.landgo.userservice.strategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.landgo.userservice.dto.request.RegisterRequest;
 import com.landgo.userservice.enums.AuthProvider;
-import com.landgo.userservice.enums.UserType;
 import com.landgo.userservice.exception.BadRequestException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -88,7 +87,7 @@ public class AppleAuthenticationStrategy implements OAuth2AuthenticationStrategy
         String first = userInfo.getFirstName().isEmpty() ? "Apple" : userInfo.getFirstName();
         String last = userInfo.getLastName().isEmpty() ? "User" : userInfo.getLastName();
         return RegisterRequest.builder()
-                .userType(UserType.SELLER).fullName((first + " " + last).trim())
+                .fullName((first + " " + last).trim()).role("seller")
                 .email(userInfo.getEmail()).firstName(first).lastName(last)
                 .profileImageUrl(userInfo.getProfileImageUrl())
                 .authProvider(AuthProvider.APPLE).providerId(userInfo.getProviderId()).build();

@@ -24,5 +24,6 @@ public interface UserMapper {
     @Mapping(target = "agentAuthorizationAccepted", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "professionalBio", ignore = true)
+    @Mapping(target = "recoLicenseNumber", source = "licenseNumber")
     User toEntity(RegisterRequest request);
 }

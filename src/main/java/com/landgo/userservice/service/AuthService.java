@@ -67,36 +67,28 @@ public class AuthService {
             throw new BadRequestException("Passwords do not match", "VALIDATION_ERROR");
         }
 
-        if (request.getUserType() == UserType.AGENT) {
-            if (request.getAgencyName() == null || request.getAgencyName().isBlank())
-                throw new BadRequestException("Agency name is required for agent registration", "AUTH_AGENT_FIELDS_REQUIRED");
-            if (request.getRecoLicenseNumber() == null || request.getRecoLicenseNumber().isBlank())
-                throw new BadRequestException("RECO license number is required for agent registration", "AUTH_AGENT_FIELDS_REQUIRED");
-            if (request.getAgentAuthorizationAccepted() == null || !request.getAgentAuthorizationAccepted())
-                throw new BadRequestException("Agent authorization must be accepted", "AUTH_AGENT_FIELDS_REQUIRED");
+        Role requestedRole = mapRequestedRole(request.getRole());
+        if (requestedRole == Role.AGENT) {
+            if (request.getAgencyName() == null || request.getAgencyName().isBlank()) {
+                throw new BadRequestException("Agency name is required for professional registration", "AUTH_AGENT_FIELDS_REQUIRED");
+            }
+            if (request.getLicenseNumber() == null || request.getLicenseNumber().isBlank()) {
+                throw new BadRequestException("License number is required for professional registration", "AUTH_AGENT_FIELDS_REQUIRED");
+            }
         }
 
-        if (request.getFullName() != null && !request.getFullName().isBlank()) {
-            String[] parts = request.getFullName().trim().split("\\s+", 2);
-            request.setFirstName(parts[0]);
-            request.setLastName(parts.length > 1 ? parts[1] : "");
-        }
+        request.setFullName((request.getFirstName().trim() + " " + request.getLastName().trim()).trim());
 
         User user = userMapper.toEntity(request);
         user.setAuthProvider(AuthProvider.EMAIL);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        if (request.getUserType() == UserType.AGENT) {
-            user.setRole(Role.AGENT);
-            user.setUserType(UserType.AGENT);
-            user.setAgentAuthorizationAccepted(true);
-        } else {
-            user.setRole(Role.SELLER);
-            user.setUserType(UserType.SELLER);
-        }
+        user.setRole(requestedRole);
+        user.setUserType(requestedRole == Role.AGENT ? UserType.AGENT : UserType.SELLER);
+        user.setAgentAuthorizationAccepted(requestedRole == Role.AGENT);
+        user.setRecoLicenseNumber(request.getLicenseNumber());
 
         user = userRepository.save(user);
-        log.info("{} registered: {}", request.getUserType(), user.getEmail());
+        log.info("{} registered: {}", user.getRole(), user.getEmail());
         generateAndSendVerificationCode(user);
         return userMapper.toResponse(user);
     }
@@ -286,13 +278,16 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Password and confirm password do not match", "VALIDATION_ERROR");
+        }
         PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(request.getToken())
                 .orElseThrow(() -> new BadRequestException("Invalid or expired password reset link", "AUTH_INVALID_OR_EXPIRED_TOKEN"));
         if (resetToken.isExpired())
             throw new BadRequestException("Password reset link has expired. Please request a new one.", "AUTH_INVALID_OR_EXPIRED_TOKEN");
 
         User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
@@ -341,5 +336,17 @@ public class AuthService {
                 .accessToken(accessToken).refreshToken(refreshToken).tokenType("Bearer")
                 .expiresIn(tokenProvider.getAccessTokenExpiration() / 1000)
                 .user(userMapper.toResponse(user)).build();
+    }
+
+    private Role mapRequestedRole(String role) {
+        if (role == null) {
+            throw new BadRequestException("Role is required", "VALIDATION_ERROR");
+        }
+        return switch (role.trim().toLowerCase()) {
+            case "buyer", "seller" -> Role.SELLER;
+            case "professional" -> Role.AGENT;
+            case "admin" -> Role.ADMIN;
+            default -> throw new BadRequestException("Role must be one of: buyer, seller, professional, admin", "VALIDATION_ERROR");
+        };
     }
 }

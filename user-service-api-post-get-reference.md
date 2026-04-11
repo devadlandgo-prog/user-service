@@ -22,7 +22,7 @@ Common error wrapper:
 ## 1) Register User
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/register`
+- **URL:** `/auth/register`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -76,7 +76,7 @@ Common error wrapper:
 ## 2) Login
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/login`
+- **URL:** `/auth/login`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -119,7 +119,7 @@ Common error wrapper:
 ## 3) OAuth2 Login
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/oauth2`
+- **URL:** `/auth/oauth2`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -155,7 +155,7 @@ Common error wrapper:
 ## 4) Logout
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/logout`
+- **URL:** `/auth/logout`
 - **Auth required:** Yes (Bearer token)
 - **Query params:** None
 - **Headers:** `Authorization: Bearer <accessToken>`
@@ -175,7 +175,7 @@ No body
 ## 5) Verify Email
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/verify-email`
+- **URL:** `/auth/verify`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -200,7 +200,7 @@ No body
 ## 6) Resend Verification Code
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/resend-verification`
+- **URL:** `/auth/resend-verification`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -224,7 +224,7 @@ No body
 ## 7) Forgot Password
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/forgot-password`
+- **URL:** `/auth/forgot-password`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -248,13 +248,13 @@ No body
 ## 8) Validate Reset Token
 
 - **Method:** `GET`
-- **URL:** `/api/v1/auth/reset-password/validate`
+- **URL:** `/auth/reset-password/validate`
 - **Auth required:** No
 - **Query params:**
   - `token` (string, required)
 
 ### Sample Request URL
-`/api/v1/auth/reset-password/validate?token=abc-reset-token`
+`/auth/reset-password/validate?token=abc-reset-token`
 
 ### Sample Response (200)
 ```json
@@ -268,7 +268,7 @@ No body
 ## 9) Reset Password
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/reset-password`
+- **URL:** `/auth/reset-password`
 - **Auth required:** No
 - **Query params:** None
 - **Headers:** `Content-Type: application/json`
@@ -293,7 +293,7 @@ No body
 ## 10) Change Password
 
 - **Method:** `POST`
-- **URL:** `/api/v1/auth/change-password`
+- **URL:** `/auth/change-password`
 - **Auth required:** Yes (Bearer token)
 - **Query params:** None
 - **Headers:** `Authorization: Bearer <accessToken>`, `Content-Type: application/json`
@@ -319,7 +319,7 @@ No body
 ## 11) Get My Profile
 
 - **Method:** `GET`
-- **URL:** `/api/v1/profile`
+- **URL:** `/profile`
 - **Auth required:** Yes (Bearer token)
 - **Query params:** None
 - **Headers:** `Authorization: Bearer <accessToken>`
@@ -347,7 +347,7 @@ No body
 ## 12) Get Notification Preferences
 
 - **Method:** `GET`
-- **URL:** `/api/v1/users/me/notification-settings`
+- **URL:** `/users/me/notification-settings`
 - **Auth required:** Yes (Bearer token)
 - **Query params:** None
 - **Headers:** `Authorization: Bearer <accessToken>`

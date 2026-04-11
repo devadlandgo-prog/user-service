@@ -2,7 +2,6 @@ package com.landgo.userservice.strategy;
 
 import com.landgo.userservice.dto.request.RegisterRequest;
 import com.landgo.userservice.enums.AuthProvider;
-import com.landgo.userservice.enums.UserType;
 import com.landgo.userservice.exception.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,7 +60,7 @@ public class GoogleAuthenticationStrategy implements OAuth2AuthenticationStrateg
         String fullName = (userInfo.getFirstName() + " " + userInfo.getLastName()).trim();
         if (fullName.isEmpty()) fullName = userInfo.getEmail().split("@")[0];
         return RegisterRequest.builder()
-                .userType(UserType.SELLER).fullName(fullName).email(userInfo.getEmail())
+                .fullName(fullName).email(userInfo.getEmail()).role("seller")
                 .firstName(userInfo.getFirstName()).lastName(userInfo.getLastName())
                 .profileImageUrl(userInfo.getProfileImageUrl())
                 .authProvider(AuthProvider.GOOGLE).providerId(userInfo.getProviderId()).build();
