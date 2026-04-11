@@ -11,6 +11,7 @@ import com.landgo.userservice.repository.UserRepository;
 import com.landgo.userservice.repository.VendorProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ public class VendorService {
     private final VendorProfileMapper vendorProfileMapper;
 
     @Transactional
-    public VendorResponse createVendorProfile(UUID userId, VendorProfileRequest request) {
+    public VendorResponse createVendorProfile(@NonNull UUID userId, VendorProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
@@ -45,7 +46,7 @@ public class VendorService {
     }
 
     @Transactional(readOnly = true)
-    public VendorResponse getVendorProfile(UUID userId) {
+    public VendorResponse getVendorProfile(@NonNull UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         VendorProfile profile = vendorProfileRepository.findByUser(user)
@@ -54,7 +55,7 @@ public class VendorService {
     }
 
     @Transactional
-    public VendorResponse updateVendorProfile(UUID userId, VendorProfileRequest request) {
+    public VendorResponse updateVendorProfile(@NonNull UUID userId, VendorProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         VendorProfile profile = vendorProfileRepository.findByUser(user)
@@ -77,7 +78,7 @@ public class VendorService {
     }
 
     @Transactional(readOnly = true)
-    public VendorResponse getVendorProfileById(UUID vendorId) {
+    public VendorResponse getVendorProfileById(@NonNull UUID vendorId) {
         VendorProfile profile = vendorProfileRepository.findById(vendorId)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", vendorId));
         return vendorProfileMapper.toResponse(profile);
