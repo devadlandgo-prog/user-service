@@ -10,7 +10,9 @@
               "sql": "CREATE SCHEMA IF NOT EXISTS users;"
             }
           }
-        ]
+        ],
+        "runOnChange": true,
+        "failOnError": false
       }
     },
     {
