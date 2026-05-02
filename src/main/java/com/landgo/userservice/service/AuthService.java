@@ -77,7 +77,11 @@ public class AuthService {
             }
         }
 
-        request.setFullName((request.getFirstName().trim() + " " + request.getLastName().trim()).trim());
+        if (request.getFirstName() == null || request.getFirstName().isBlank()) {
+            String[] parts = request.getFullName().trim().split("\\s+", 2);
+            request.setFirstName(parts[0]);
+            request.setLastName(parts.length > 1 ? parts[1] : "");
+        }
 
         User user = userMapper.toEntity(request);
         user.setAuthProvider(AuthProvider.EMAIL);
@@ -208,7 +212,7 @@ public class AuthService {
     // ==========================================
 
     @Transactional
-    public void verifyEmail(VerifyEmailRequest request) {
+    public UserResponse verifyEmail(VerifyEmailRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("No account found with this email address"));
 
@@ -233,9 +237,10 @@ public class AuthService {
         token.setUsed(true);
         emailVerificationTokenRepository.save(token);
         user.setEmailVerified(true);
-        userRepository.save(user);
+        user = userRepository.save(user);
         emailVerificationTokenRepository.invalidateAllTokensForUser(user);
         log.info("Email verified successfully for user: {}", user.getEmail());
+        return userMapper.toResponse(user);
     }
 
     @Transactional

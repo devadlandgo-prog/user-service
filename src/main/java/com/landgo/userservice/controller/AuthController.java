@@ -45,6 +45,12 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
+    @PostMapping("/google")
+    @Operation(summary = "Google OAuth2 login (alias for /oauth2)")
+    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody OAuth2Request request) {
+        return oauth2Login(request);
+    }
+
     @PostMapping("/logout")
     @Operation(summary = "Logout current user")
     public ResponseEntity<ApiResponse<Void>> logout(@CurrentUser UserPrincipal userPrincipal) {
@@ -54,9 +60,9 @@ public class AuthController {
 
     @PostMapping("/verify")
     @Operation(summary = "Verify email with 4-digit code")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-        authService.verifyEmail(request);
-        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
+    public ResponseEntity<ApiResponse<UserResponse>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        UserResponse response = authService.verifyEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", response));
     }
 
     @PostMapping("/resend-verification")

@@ -41,6 +41,13 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
     }
 
+    @DeleteMapping("/profile")
+    @Operation(summary = "Delete account")
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(@CurrentUser UserPrincipal userPrincipal) {
+        // Stub for account deletion logic
+        return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
+    }
+
     @GetMapping("/users/me/notification-settings")
     @Operation(summary = "Get notification preferences")
     public ResponseEntity<ApiResponse<NotificationPreferencesResponse>> getNotificationPreferences(
@@ -56,5 +63,17 @@ public class UserController {
             @Valid @RequestBody NotificationPreferencesRequest request) {
         NotificationPreferencesResponse response = notificationPreferencesService.updatePreferences(userPrincipal, request);
         return ResponseEntity.ok(ApiResponse.success("Notification preferences updated", response));
+    }
+
+    @GetMapping("/users/me/stats")
+    @Operation(summary = "Get user aggregate metrics")
+    public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.UserStatsResponse>> getUserStats(
+            @CurrentUser UserPrincipal userPrincipal) {
+        // Stub for now
+        com.landgo.userservice.dto.response.UserStatsResponse stats = com.landgo.userservice.dto.response.UserStatsResponse.builder()
+                .activeListings(5)
+                .totalViews(1250)
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(stats));
     }
 }

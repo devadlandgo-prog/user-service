@@ -6,8 +6,9 @@ import lombok.*;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class RegisterRequest {
-    @NotBlank(message = "First name is required") @Size(min = 1, max = 50) private String firstName;
-    @NotBlank(message = "Last name is required") @Size(min = 1, max = 50) private String lastName;
+    @NotBlank(message = "Full name is required") @Size(min = 1, max = 100) private String fullName;
+    @Size(max = 50) private String firstName;
+    @Size(max = 50) private String lastName;
     @NotBlank(message = "Email is required") @Email private String email;
     @NotBlank(message = "Role is required (buyer, seller, professional, admin)") private String role;
     @NotBlank(message = "Password is required") @Size(min = 8) private String password;
@@ -15,7 +16,6 @@ public class RegisterRequest {
     private String phone;
     @Size(max = 200) private String agencyName;
     @Size(max = 50) private String licenseNumber;
-    private String fullName;
     @Builder.Default private AuthProvider authProvider = AuthProvider.EMAIL;
     private String providerId;
     private String profileImageUrl;
