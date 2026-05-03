@@ -25,11 +25,11 @@ public class RegisterRequestTest {
     @Test
     public void testValidationSuccess() {
         RegisterRequest request = RegisterRequest.builder()
-                .firstName("John")
-                .lastName("Doe")
+                .fullName("John Doe")
                 .email("john@example.com")
                 .password("password123")
                 .role("buyer")
+                .phone("+1-416-555-0100")
                 .build();
 
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
@@ -43,11 +43,9 @@ public class RegisterRequestTest {
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);
         assertFalse(violations.isEmpty(), "Expected violations for empty request");
         
-        // Check if firstName and lastName are in violations
-        boolean hasFirstName = violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("firstName"));
-        boolean hasLastName = violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("lastName"));
+        // Check if fullName is in violations
+        boolean hasFullName = violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("fullName"));
         
-        assertTrue(hasFirstName, "Expected violation for firstName");
-        assertTrue(hasLastName, "Expected violation for lastName");
+        assertTrue(hasFullName, "Expected violation for fullName");
     }
 }
