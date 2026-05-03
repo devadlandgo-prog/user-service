@@ -122,5 +122,13 @@ public class AuthController {
         AuthResponse response = authService.verifyMfa(request);
         return ResponseEntity.ok(ApiResponse.success("MFA verified successfully", response));
     }
+
+    @PostMapping("/mfa/resend")
+    @Operation(summary = "Resend MFA code")
+    public ResponseEntity<ApiResponse<Void>> resendMfa(@Valid @RequestBody MfaResendRequest request) {
+        authService.resendMfa(request);
+        return ResponseEntity.ok(ApiResponse.success("MFA code resent successfully", null));
+    }
 }
+
 

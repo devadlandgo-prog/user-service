@@ -195,6 +195,25 @@ public class AuthService {
         return generateAuthResponse(user);
     }
 
+    @Transactional(readOnly = true)
+    public void resendMfa(MfaResendRequest request) {
+        if (!tokenProvider.validateToken(request.getMfaSession())) {
+            throw new BadRequestException("Invalid or expired MFA session", "MFA_SESSION_EXPIRED");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getMfaSession());
+        if (!"MFA_SESSION".equals(claims.get("type"))) {
+            throw new BadRequestException("Invalid MFA session type", "MFA_SESSION_INVALID");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        log.info("Resending MFA code for user: {}", user.getEmail());
+        mfaService.initiateMfa(user);
+    }
+
     // ==========================================
     // LOGOUT
     // ==========================================
