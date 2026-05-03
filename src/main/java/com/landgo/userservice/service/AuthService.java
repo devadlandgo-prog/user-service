@@ -77,17 +77,18 @@ public class AuthService {
             }
         }
 
-        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
-            if (request.getFullName() == null || request.getFullName().isBlank()) {
-                request.setFullName(request.getFirstName() + " " + (request.getLastName() != null ? request.getLastName() : ""));
-            }
-        } else if (request.getFullName() != null && !request.getFullName().isBlank()) {
-            String[] parts = request.getFullName().trim().split("\\s+", 2);
-            request.setFirstName(parts[0]);
-            request.setLastName(parts.length > 1 ? parts[1] : "");
+        if (request.getFullName() == null || request.getFullName().isBlank()) {
+            throw new BadRequestException("Full name is required", "VALIDATION_ERROR");
         }
 
+        String[] parts = request.getFullName().trim().split("\\s+", 2);
+        // Keep internal first/last fields populated from canonical fullName request
+        // (DB and downstream templates still read firstName in some places).
+        String firstName = parts[0];
+        String lastName = parts.length > 1 ? parts[1] : "";
         User user = userMapper.toEntity(request);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setAuthProvider(AuthProvider.EMAIL);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(requestedRole);
@@ -355,6 +356,28 @@ public class AuthService {
             throw new BadRequestException("Password reset link has expired. Please request a new one.", "AUTH_INVALID_OR_EXPIRED_TOKEN");
     }
 
+    @Transactional(readOnly = true)
+    public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
+        if (!tokenProvider.validateToken(request.getRefreshToken())) {
+            throw new BadRequestException("Invalid or expired refresh token", "AUTH_INVALID_REFRESH_TOKEN");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getRefreshToken());
+        Object tokenType = claims.get("type");
+        if (!"REFRESH".equals(tokenType)) {
+            throw new BadRequestException("Invalid token type for refresh", "AUTH_INVALID_REFRESH_TOKEN");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!user.isActive()) {
+            throw new BadRequestException("User account is inactive", "AUTH_ACCOUNT_INACTIVE");
+        }
+
+        return generateAuthResponse(user);
+    }
+
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
@@ -394,6 +417,17 @@ public class AuthService {
         log.info("User {} role updated to {}", userId, role);
     }
 
+    @Transactional
+    public void deleteAccount(UserPrincipal userPrincipal) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActive(false);
+        user.setMfaEnabled(false);
+        user.setMfaVerified(false);
+        userRepository.save(user);
+        log.info("Account deactivated for user: {}", user.getEmail());
+    }
+
     // ==========================================
     // HELPERS
     // ==========================================
@@ -423,9 +457,10 @@ public class AuthService {
         }
         return switch (role.trim().toLowerCase()) {
             case "buyer", "seller" -> Role.SELLER;
-            case "professional" -> Role.AGENT;
+            case "professional", "agent" -> Role.AGENT;
+            case "vendor" -> Role.VENDOR;
             case "admin" -> Role.ADMIN;
-            default -> throw new BadRequestException("Role must be one of: buyer, seller, professional, admin", "VALIDATION_ERROR");
+            default -> throw new BadRequestException("Role must be one of: buyer, seller, vendor, agent, professional, admin", "VALIDATION_ERROR");
         };
     }
 
@@ -454,4 +489,3 @@ public class AuthService {
         return userRepository.findAll(pageable).map(userMapper::toResponse);
     }
 }
-

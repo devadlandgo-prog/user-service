@@ -11,5 +11,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserStatsResponse {
     private long activeListings;
+    private long totalListings;
     private long totalViews;
+    private long totalEnquiries;
+    private long activeSubscriptions;
+    private int profileCompleteness;
+    private java.time.LocalDateTime lastLoginAt;
+    private long memberSinceMonths;
 }

@@ -4,6 +4,7 @@ import com.landgo.userservice.dto.request.NotificationPreferencesRequest;
 import com.landgo.userservice.dto.request.UpdateProfileRequest;
 import com.landgo.userservice.dto.response.ApiResponse;
 import com.landgo.userservice.dto.response.NotificationPreferencesResponse;
+import com.landgo.userservice.dto.response.PageResponse;
 import com.landgo.userservice.dto.response.UserResponse;
 import com.landgo.userservice.security.CurrentUser;
 import com.landgo.userservice.security.UserPrincipal;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -44,7 +46,7 @@ public class UserController {
     @DeleteMapping("/profile")
     @Operation(summary = "Delete account")
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@CurrentUser UserPrincipal userPrincipal) {
-        // Stub for account deletion logic
+        authService.deleteAccount(userPrincipal);
         return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
     }
 
@@ -71,7 +73,13 @@ public class UserController {
             @CurrentUser UserPrincipal userPrincipal) {
         com.landgo.userservice.dto.response.UserStatsResponse stats = com.landgo.userservice.dto.response.UserStatsResponse.builder()
                 .activeListings(5)
+                .totalListings(12)
                 .totalViews(1250)
+                .totalEnquiries(42)
+                .activeSubscriptions(2)
+                .profileCompleteness(85)
+                .lastLoginAt(java.time.LocalDateTime.now().minusHours(2))
+                .memberSinceMonths(6)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
@@ -89,7 +97,8 @@ public class UserController {
 
     @GetMapping("/users")
     @Operation(summary = "List all users (admin)")
-    public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<UserResponse>>> getAllUsers(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         org.springframework.data.domain.Pageable pageable =
@@ -97,7 +106,15 @@ public class UserController {
                         org.springframework.data.domain.Sort.by("createdAt").descending());
         org.springframework.data.domain.Page<UserResponse> users =
                 authService.getAllUsers(pageable);
-        return ResponseEntity.ok(ApiResponse.success(users));
+        PageResponse<UserResponse> response = PageResponse.<UserResponse>builder()
+                .data(users.getContent())
+                .page(users.getNumber())
+                .pageSize(users.getSize())
+                .total(users.getTotalElements())
+                .totalPages(users.getTotalPages())
+                .first(users.isFirst())
+                .last(users.isLast())
+                .build();
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
-

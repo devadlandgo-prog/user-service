@@ -94,9 +94,9 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh access token")
-    public ResponseEntity<ApiResponse<Void>> refreshToken() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(ApiResponse.error("Refresh token endpoint is not implemented yet", "NOT_IMPLEMENTED"));
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshAccessToken(request);
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
     }
 
     @PostMapping("/reset-password")
@@ -129,5 +129,4 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("MFA code resent successfully", null));
     }
 }
-
 
