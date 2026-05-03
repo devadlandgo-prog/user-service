@@ -35,9 +35,8 @@ public class TwilioService {
         log.info("Checking verification code for: {}", phoneNumber);
         try {
             VerificationCheck check = VerificationCheck.creator(
-                    twilioConfig.getVerifyServiceSid(),
-                    code
-            ).setTo(phoneNumber).create();
+                    twilioConfig.getVerifyServiceSid()
+            ).setTo(phoneNumber).setCode(code).create();
             return "approved".equalsIgnoreCase(check.getStatus());
         } catch (Exception e) {
             log.error("Error checking verification code", e);
