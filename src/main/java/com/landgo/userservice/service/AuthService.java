@@ -67,10 +67,6 @@ public class AuthService {
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
         }
 
-        if (request.getConfirmPassword() != null && !request.getPassword().equals(request.getConfirmPassword())) {
-            throw new BadRequestException("Passwords do not match", "VALIDATION_ERROR");
-        }
-
         Role requestedRole = mapRequestedRole(request.getRole());
         if (requestedRole == Role.AGENT) {
             if (request.getAgencyName() == null || request.getAgencyName().isBlank()) {

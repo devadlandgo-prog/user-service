@@ -12,7 +12,6 @@ public class RegisterRequest {
     @NotBlank(message = "Email is required") @Email private String email;
     @NotBlank(message = "Role is required (buyer, seller, professional, admin)") private String role;
     @NotBlank(message = "Password is required") @Size(min = 8) private String password;
-    @NotBlank(message = "Confirm password is required") private String confirmPassword;
     private String phone;
     @Size(max = 200) private String agencyName;
     @Size(max = 50) private String licenseNumber;
