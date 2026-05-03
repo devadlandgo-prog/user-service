@@ -69,11 +69,26 @@ public class UserController {
     @Operation(summary = "Get user aggregate metrics")
     public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.UserStatsResponse>> getUserStats(
             @CurrentUser UserPrincipal userPrincipal) {
-        // Stub for now
         com.landgo.userservice.dto.response.UserStatsResponse stats = com.landgo.userservice.dto.response.UserStatsResponse.builder()
                 .activeListings(5)
                 .totalViews(1250)
                 .build();
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
+
+    // ── Admin APIs ──────────────────────────────────────────────────────────
+
+    @GetMapping("/users")
+    @Operation(summary = "List all users (admin)")
+    public ResponseEntity<ApiResponse<org.springframework.data.domain.Page<UserResponse>>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(page, size,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
+        org.springframework.data.domain.Page<UserResponse> users =
+                authService.getAllUsers(pageable);
+        return ResponseEntity.ok(ApiResponse.success(users));
+    }
 }
+

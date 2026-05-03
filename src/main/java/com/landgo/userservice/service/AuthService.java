@@ -33,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Slf4j
 @Service
@@ -354,4 +357,10 @@ public class AuthService {
             default -> throw new BadRequestException("Role must be one of: buyer, seller, professional, admin", "VALIDATION_ERROR");
         };
     }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toResponse);
+    }
 }
+
