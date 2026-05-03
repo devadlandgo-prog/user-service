@@ -10,6 +10,7 @@ public class ApiResponse<T> {
     private String message;
     private String code;
     private T data;
+    private Object details;
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder().success(true).data(data).build();
@@ -19,5 +20,8 @@ public class ApiResponse<T> {
     }
     public static <T> ApiResponse<T> error(String message, String code) {
         return ApiResponse.<T>builder().success(false).message(message).code(code).build();
+    }
+    public static <T> ApiResponse<T> error(String message, String code, Object details) {
+        return ApiResponse.<T>builder().success(false).message(message).code(code).details(details).build();
     }
 }

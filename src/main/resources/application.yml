@@ -38,6 +38,9 @@ app:
     secret: ${JWT_SECRET:myVeryLongSecretKeyThatIsAtLeast256BitsForHS256Algorithm2024!}
     access-token-expiration: 3600000
     refresh-token-expiration: 604800000
+  services:
+    core-service-url: ${CORE_SERVICE_URL:http://localhost:8083}
+    payment-service-url: ${PAYMENT_SERVICE_URL:http://localhost:8082}
   mail:
     from: ${MAIL_FROM:noreply@landgo.com}
     reset-password-url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password}

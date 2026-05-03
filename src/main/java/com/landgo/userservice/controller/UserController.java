@@ -8,8 +8,10 @@ import com.landgo.userservice.dto.response.PageResponse;
 import com.landgo.userservice.dto.response.UserResponse;
 import com.landgo.userservice.security.CurrentUser;
 import com.landgo.userservice.security.UserPrincipal;
+import com.landgo.userservice.dto.response.UserStatsResponse;
 import com.landgo.userservice.service.AuthService;
 import com.landgo.userservice.service.NotificationPreferencesService;
+import com.landgo.userservice.service.UserStatsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +28,7 @@ public class UserController {
 
     private final AuthService authService;
     private final NotificationPreferencesService notificationPreferencesService;
+    private final UserStatsService userStatsService;
 
     @GetMapping("/profile")
     @Operation(summary = "Get my profile")
@@ -69,18 +72,9 @@ public class UserController {
 
     @GetMapping("/users/me/stats")
     @Operation(summary = "Get user aggregate metrics")
-    public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.UserStatsResponse>> getUserStats(
+    public ResponseEntity<ApiResponse<UserStatsResponse>> getUserStats(
             @CurrentUser UserPrincipal userPrincipal) {
-        com.landgo.userservice.dto.response.UserStatsResponse stats = com.landgo.userservice.dto.response.UserStatsResponse.builder()
-                .activeListings(5)
-                .totalListings(12)
-                .totalViews(1250)
-                .totalEnquiries(42)
-                .activeSubscriptions(2)
-                .profileCompleteness(85)
-                .lastLoginAt(java.time.LocalDateTime.now().minusHours(2))
-                .memberSinceMonths(6)
-                .build();
+        UserStatsResponse stats = userStatsService.buildStats(userPrincipal);
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
@@ -107,10 +101,10 @@ public class UserController {
         org.springframework.data.domain.Page<UserResponse> users =
                 authService.getAllUsers(pageable);
         PageResponse<UserResponse> response = PageResponse.<UserResponse>builder()
-                .data(users.getContent())
-                .page(users.getNumber())
-                .pageSize(users.getSize())
-                .total(users.getTotalElements())
+                .content(users.getContent())
+                .number(users.getNumber())
+                .size(users.getSize())
+                .totalElements(users.getTotalElements())
                 .totalPages(users.getTotalPages())
                 .first(users.isFirst())
                 .last(users.isLast())

@@ -52,6 +52,7 @@ public class AuthService {
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
     private final MfaService mfaService;
+    private final LoginAuditService loginAuditService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -276,6 +277,7 @@ public class AuthService {
         if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl());
         if (request.getLocation() != null) user.setLocation(request.getLocation().isBlank() ? null : request.getLocation());
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
+        if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
 
         user = userRepository.save(user);
         log.info("Profile updated for user: {}", user.getEmail());
@@ -312,6 +314,7 @@ public class AuthService {
         token.setUsed(true);
         emailVerificationTokenRepository.save(token);
         user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
         user = userRepository.save(user);
         emailVerificationTokenRepository.invalidateAllTokensForUser(user);
         log.info("Email verified successfully for user: {}", user.getEmail());
@@ -442,6 +445,7 @@ public class AuthService {
     }
 
     private AuthResponse generateAuthResponse(User user) {
+        loginAuditService.recordLastLogin(user.getId());
         UserPrincipal userPrincipal = UserPrincipal.create(user);
         String accessToken = tokenProvider.generateAccessToken(userPrincipal);
         String refreshToken = tokenProvider.generateRefreshToken(userPrincipal);
