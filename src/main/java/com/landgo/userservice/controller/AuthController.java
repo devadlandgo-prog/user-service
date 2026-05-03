@@ -48,11 +48,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
-    @PostMapping("/google")
-    @Operation(summary = "Google OAuth2 login (alias for /oauth2)")
-    public ResponseEntity<ApiResponse<AuthResponse>> googleLogin(@Valid @RequestBody OAuth2Request request) {
-        return oauth2Login(request);
-    }
+
 
     @PostMapping("/logout")
     @Operation(summary = "Logout current user")
