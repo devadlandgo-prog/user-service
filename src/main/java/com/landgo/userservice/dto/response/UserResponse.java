@@ -27,6 +27,9 @@ public class UserResponse {
     private String recoLicenseNumber;
     private boolean isVendor;
     private boolean isAgent;
+    private boolean mfaEnabled;
+    private boolean mfaVerified;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -115,4 +115,12 @@ public class AuthController {
         authService.changePassword(userPrincipal, request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
     }
+
+    @PostMapping("/mfa/verify")
+    @Operation(summary = "Verify MFA code to complete login")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
+        AuthResponse response = authService.verifyMfa(request);
+        return ResponseEntity.ok(ApiResponse.success("MFA verified successfully", response));
+    }
 }
+

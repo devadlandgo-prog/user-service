@@ -51,6 +51,7 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
+    private final MfaService mfaService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -111,7 +112,19 @@ public class AuthService {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        log.info("User logged in: {}", user.getEmail());
+        log.info("User login attempt: {}", user.getEmail());
+        
+        if (user.isMfaEnabled()) {
+            log.info("MFA required for user: {}", user.getEmail());
+            mfaService.initiateMfa(user);
+            String mfaSession = tokenProvider.generateMfaToken(user.getId());
+            return AuthResponse.builder()
+                    .mfaRequired(true)
+                    .mfaSession(mfaSession)
+                    .user(userMapper.toResponse(user))
+                    .build();
+        }
+
         return generateAuthResponse(user);
     }
 
@@ -140,6 +153,45 @@ public class AuthService {
                 });
 
         log.info("OAuth2 login successful for: {}", user.getEmail());
+        
+        if (user.isMfaEnabled()) {
+            log.info("MFA required for user: {}", user.getEmail());
+            mfaService.initiateMfa(user);
+            String mfaSession = tokenProvider.generateMfaToken(user.getId());
+            return AuthResponse.builder()
+                    .mfaRequired(true)
+                    .mfaSession(mfaSession)
+                    .user(userMapper.toResponse(user))
+                    .build();
+        }
+
+        return generateAuthResponse(user);
+    }
+
+    // ==========================================
+    // MFA VERIFICATION
+    // ==========================================
+
+    @Transactional(readOnly = true)
+    public AuthResponse verifyMfa(MfaVerifyRequest request) {
+        if (!tokenProvider.validateToken(request.getMfaSession())) {
+            throw new BadRequestException("Invalid or expired MFA session", "MFA_SESSION_EXPIRED");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getMfaSession());
+        if (!"MFA_SESSION".equals(claims.get("type"))) {
+            throw new BadRequestException("Invalid MFA session type", "MFA_SESSION_INVALID");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!mfaService.verifyMfa(user, request.getCode())) {
+            throw new BadRequestException("Invalid MFA code", "MFA_INVALID_CODE");
+        }
+
+        log.info("MFA verified successfully for user: {}", user.getEmail());
         return generateAuthResponse(user);
     }
 
@@ -356,6 +408,26 @@ public class AuthService {
             case "admin" -> Role.ADMIN;
             default -> throw new BadRequestException("Role must be one of: buyer, seller, professional, admin", "VALIDATION_ERROR");
         };
+    }
+
+    @Transactional
+    public UserResponse updateMfaStatus(UserPrincipal userPrincipal, MfaSetupRequest request) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setMfaEnabled(request.isEnabled());
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            user.setPhone(request.getPhone());
+        }
+
+        if (user.isMfaEnabled()) {
+            // Trigger a verification to ensure the phone works
+            mfaService.initiateMfa(user);
+        }
+
+        user = userRepository.save(user);
+        log.info("MFA status updated for user: {}. Enabled: {}", user.getEmail(), user.isMfaEnabled());
+        return userMapper.toResponse(user);
     }
 
     @Transactional(readOnly = true)

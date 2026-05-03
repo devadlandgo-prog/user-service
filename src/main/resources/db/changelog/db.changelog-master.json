@@ -47,6 +47,19 @@
           }
         ]
       }
+    },
+    {
+      "changeSet": {
+        "id": "2-add-mfa-columns",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS mfa_verified BOOLEAN NOT NULL DEFAULT FALSE;"
+            }
+          }
+        ]
+      }
     }
   ]
 }

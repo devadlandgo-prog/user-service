@@ -31,6 +31,8 @@ public class User extends BaseEntity {
     @Column(name = "agency_name", length = 200) private String agencyName;
     @Column(name = "reco_license_number", length = 50) private String recoLicenseNumber;
     @Column(name = "agent_authorization_accepted") @Builder.Default private boolean agentAuthorizationAccepted = false;
+    @Column(name = "mfa_enabled") @Builder.Default private boolean mfaEnabled = false;
+    @Column(name = "mfa_verified") @Builder.Default private boolean mfaVerified = false;
 
     public String getFullName() {
         if (fullName != null && !fullName.isBlank()) return fullName;

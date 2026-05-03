@@ -76,6 +76,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
 
+    @PatchMapping("/users/me/mfa")
+    @Operation(summary = "Toggle MFA status")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMfaStatus(
+            @CurrentUser UserPrincipal userPrincipal,
+            @Valid @RequestBody com.landgo.userservice.dto.request.MfaSetupRequest request) {
+        UserResponse response = authService.updateMfaStatus(userPrincipal, request);
+        return ResponseEntity.ok(ApiResponse.success("MFA status updated", response));
+    }
+
     // ── Admin APIs ──────────────────────────────────────────────────────────
 
     @GetMapping("/users")
