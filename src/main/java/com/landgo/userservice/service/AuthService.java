@@ -77,7 +77,11 @@ public class AuthService {
             }
         }
 
-        if (request.getFirstName() == null || request.getFirstName().isBlank()) {
+        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+            if (request.getFullName() == null || request.getFullName().isBlank()) {
+                request.setFullName(request.getFirstName() + " " + (request.getLastName() != null ? request.getLastName() : ""));
+            }
+        } else if (request.getFullName() != null && !request.getFullName().isBlank()) {
             String[] parts = request.getFullName().trim().split("\\s+", 2);
             request.setFirstName(parts[0]);
             request.setLastName(parts.length > 1 ? parts[1] : "");
