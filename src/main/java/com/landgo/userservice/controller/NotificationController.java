@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/notifications")
@@ -19,13 +20,12 @@ import java.util.Map;
 @Tag(name = "Notifications", description = "User inbox alerts API")
 public class NotificationController {
 
+    private final com.landgo.userservice.service.NotificationService notificationService;
+
     @GetMapping
     @Operation(summary = "Get user inbox alerts")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getNotifications(@CurrentUser UserPrincipal userPrincipal) {
-        // Stub for now
-        List<Map<String, Object>> alerts = List.of(
-                Map.of("id", "1", "message", "Welcome to LandGo!", "isRead", false, "createdAt", LocalDateTime.now())
-        );
+    public ResponseEntity<ApiResponse<List<com.landgo.userservice.entity.Notification>>> getNotifications(@CurrentUser UserPrincipal userPrincipal) {
+        List<com.landgo.userservice.entity.Notification> alerts = notificationService.getNotifications(userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.success(alerts));
     }
 
@@ -33,15 +33,15 @@ public class NotificationController {
     @Operation(summary = "Mark alert as read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @CurrentUser UserPrincipal userPrincipal,
-            @PathVariable String id) {
-        // Stub for now
+            @PathVariable UUID id) {
+        notificationService.markAsRead(userPrincipal.getId(), id);
         return ResponseEntity.ok(ApiResponse.success("Alert marked as read", null));
     }
 
     @DeleteMapping("/clear")
     @Operation(summary = "Empty inbox")
     public ResponseEntity<ApiResponse<Void>> clearInbox(@CurrentUser UserPrincipal userPrincipal) {
-        // Stub for now
+        notificationService.clearInbox(userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.success("Inbox cleared", null));
     }
 }
