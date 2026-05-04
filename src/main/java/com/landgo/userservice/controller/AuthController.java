@@ -64,6 +64,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Email verified successfully", response));
     }
 
+    @GetMapping("/verify-link")
+    @Operation(summary = "Verify email with one-click token link")
+    public ResponseEntity<ApiResponse<UserResponse>> verifyEmailByLink(@RequestParam String token) {
+        UserResponse response = authService.verifyEmailByToken(token);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", response));
+    }
+
     @PostMapping("/resend-verification")
     @Operation(summary = "Resend email verification code")
     public ResponseEntity<ApiResponse<Void>> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
@@ -129,4 +136,3 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("MFA code resent successfully", null));
     }
 }
-

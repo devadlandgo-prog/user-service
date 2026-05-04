@@ -315,14 +315,29 @@ public class AuthService {
             throw new BadRequestException("Invalid verification code. " + remaining + " attempt(s) remaining.", "AUTH_INVALID_CODE");
         }
 
-        token.setUsed(true);
-        emailVerificationTokenRepository.save(token);
-        user.setEmailVerified(true);
-        user.setEmailVerifiedAt(LocalDateTime.now());
-        user = userRepository.save(user);
-        emailVerificationTokenRepository.invalidateAllTokensForUser(user);
-        log.info("Email verified successfully for user: {}", user.getEmail());
-        return userMapper.toResponse(user);
+        return completeEmailVerification(token);
+    }
+
+    @Transactional
+    public UserResponse verifyEmailByToken(String tokenValue) {
+        UUID tokenId;
+        try {
+            tokenId = UUID.fromString(tokenValue);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid verification link", "AUTH_INVALID_CODE");
+        }
+
+        EmailVerificationToken token = emailVerificationTokenRepository.findById(tokenId)
+                .orElseThrow(() -> new BadRequestException("Invalid verification link", "AUTH_INVALID_CODE"));
+
+        if (token.isUsed()) {
+            throw new BadRequestException("Verification link is no longer valid. Please request a new one.", "AUTH_INVALID_CODE");
+        }
+        if (token.isExpired()) {
+            throw new BadRequestException("Verification link has expired. Please request a new one.", "AUTH_CODE_EXPIRED");
+        }
+
+        return completeEmailVerification(token);
     }
 
     @Transactional
@@ -445,7 +460,23 @@ public class AuthService {
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .code(code).user(user).expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)).build();
         emailVerificationTokenRepository.save(token);
-        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code);
+        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code, token.getId().toString());
+    }
+
+    private UserResponse completeEmailVerification(EmailVerificationToken token) {
+        User user = token.getUser();
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("Email is already verified", "AUTH_ALREADY_VERIFIED");
+        }
+
+        token.setUsed(true);
+        emailVerificationTokenRepository.save(token);
+        user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
+        user = userRepository.save(user);
+        emailVerificationTokenRepository.invalidateAllTokensForUser(user);
+        log.info("Email verified successfully for user: {}", user.getEmail());
+        return userMapper.toResponse(user);
     }
 
     private AuthResponse generateAuthResponse(User user) {
