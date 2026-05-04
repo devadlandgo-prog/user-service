@@ -64,7 +64,9 @@ public class AuthService {
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
+        log.info("Attempting to register user with email: {}", request.getEmail());
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("Registration failed: Email {} already exists", request.getEmail());
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
         }
 
@@ -98,8 +100,9 @@ public class AuthService {
         user.setRecoLicenseNumber(request.getLicenseNumber());
 
         user = userRepository.save(user);
-        log.info("{} registered: {}", user.getRole(), user.getEmail());
+        log.info("User registered successfully: {}", user.getId());
         generateAndSendVerificationCode(user);
+        log.debug("Verification email process initiated for: {}", user.getEmail());
         return userMapper.toResponse(user);
     }
 
@@ -109,6 +112,7 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
+        log.info("Attempting login for email: {}", request.getEmail());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
