@@ -38,8 +38,17 @@ public class UserController {
     }
 
     @PatchMapping("/profile")
-    @Operation(summary = "Update profile")
+    @Operation(summary = "Update profile (partial)")
     public ResponseEntity<ApiResponse<UserResponse>> updateProfile(
+            @CurrentUser UserPrincipal userPrincipal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        UserResponse response = authService.updateProfile(userPrincipal, request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
+    }
+
+    @PutMapping("/profile")
+    @Operation(summary = "Update profile (full)")
+    public ResponseEntity<ApiResponse<UserResponse>> updateProfilePut(
             @CurrentUser UserPrincipal userPrincipal,
             @Valid @RequestBody UpdateProfileRequest request) {
         UserResponse response = authService.updateProfile(userPrincipal, request);
