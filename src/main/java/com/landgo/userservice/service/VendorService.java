@@ -36,6 +36,7 @@ public class VendorService {
         }
 
         VendorProfile profile = vendorProfileMapper.toEntity(request);
+        profile.setId(userId); // Use the user's ID for the vendor profile (shared primary key)
         profile.setUser(user);
         user.setRole(com.landgo.userservice.enums.Role.VENDOR);
         userRepository.save(user);

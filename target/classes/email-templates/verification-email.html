@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Verify Your LandGo Account</title>
+    <!-- Logo: set {{logoUrl}} to an absolute HTTPS URL when sending (relative paths break in email). -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        table {
+            border-spacing: 0;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td {
+            padding: 0;
+        }
+
+        img {
+            border: 0;
+            display: block;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        .header {
+            padding: 30px 0;
+            text-align: center;
+            background-color: #ffffff;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .logo-img {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .footer {
+            padding: 30px;
+            text-align: center;
+            background-color: #f1f5f9;
+            border-radius: 0 0 8px 8px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 16px;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 24px;
+            color: #475569;
+            margin-bottom: 32px;
+        }
+
+        .otp-container {
+            background-color: #ecfdf5;
+            border: 2px dashed #10b981;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .otp-code {
+            font-size: 40px;
+            font-weight: 800;
+            color: #059669;
+            letter-spacing: 8px;
+            margin: 0;
+        }
+
+        .expiry-note {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 12px;
+        }
+
+        .security-notice {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 24px;
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 20px;
+        }
+
+        .social-links {
+            margin-top: 20px;
+        }
+
+        .social-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .cta-link {
+            display: inline-block;
+            background-color: #059669;
+            color: #ffffff;
+            padding: 16px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+
+            .otp-code {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+
+<body style="margin:0;padding:0;background-color:#f8fafc;">
+    <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+        Verify your LandGo email - use the code or link below.
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f8fafc;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table class="container" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;width:100%;margin:0 auto;background-color:#ffffff;border-collapse:collapse;">
+                    <tr>
+                        <td class="header">
+                            <img src="{{logoUrl}}" width="200" alt="LandGo - FIND. BUILD. GROW." class="logo-img" style="max-width:200px;height:auto;border:0;display:block;margin:0 auto;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <h1 class="greeting">Verify your email address</h1>
+                            <p class="message">
+                                Hi {{userName}},<br><br>
+                                Thanks for joining LandGo! To get started exploring properties and managing your
+                                development projects, please verify your email address by entering the code below in
+                                the app.
+                            </p>
+                            <div class="otp-container">
+                                <p class="otp-code">{{verificationCode}}</p>
+                                <p class="expiry-note">This code will expire in {{expiryMinutes}} minutes.</p>
+                            </div>
+                            <p class="message">
+                                If the code above doesn't work, you can also use the link below to verify your account
+                                directly:
+                            </p>
+                            <div align="center">
+                                <a href="{{verificationUrl}}" class="cta-link">Verify Account</a>
+                            </div>
+                            <div class="security-notice">
+                                <strong>Didn't request this email?</strong><br>
+                                If you didn't create an account on LandGo, please ignore this email or contact our
+                                support team if you have concerns.
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>&copy; 2026 LandGo Inc. All rights reserved.</p>
+                            <p>123 Property Lane, Tech City, ST 54321</p>
+                            <div class="social-links">
+                                <a href="#">Twitter</a>
+                                <a href="#">Instagram</a>
+                                <a href="#">LinkedIn</a>
+                            </div>
+                            <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
+                                You're receiving this because you signed up for LandGo.<br>
+                                <a href="#" style="color: #94a3b8; text-decoration: underline;">Privacy Policy</a> |
+                                <a href="#" style="color: #94a3b8; text-decoration: underline;">Help Center</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

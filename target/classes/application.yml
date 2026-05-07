@@ -1,0 +1,88 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/landgo
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+      idle-timeout: 300000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: users
+    open-in-view: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.json
+    drop-first: true
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:myVeryLongSecretKeyThatIsAtLeast256BitsForHS256Algorithm2024!}
+    access-token-expiration: 3600000
+    refresh-token-expiration: 604800000
+  services:
+    core-service-url: ${CORE_SERVICE_URL:http://localhost:8083}
+    payment-service-url: ${PAYMENT_SERVICE_URL:http://localhost:8082}
+  mail:
+    from: ${MAIL_FROM:noreply@landgo.com}
+    reset-password-url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password}
+    verify-link-url: ${VERIFY_LINK_URL:http://localhost:3000/verify-email}
+    logo-url: ${MAIL_LOGO_URL:https://landgo.app/logo_with_tagline.png}
+    verification-template: ${VERIFICATION_EMAIL_TEMPLATE:email-templates/verification-email.html}
+  oauth2:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+    apple:
+      client-id: ${APPLE_CLIENT_ID:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID}
+  auth-token: ${TWILIO_AUTH_TOKEN}
+  verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID}
+  sendgrid:
+    api-key: ${TWILIO_SENDGRID_API_KEY:}
+    from-email: ${TWILIO_SENDGRID_FROM_EMAIL:noreply@landgo.com}
+    from-name: ${TWILIO_SENDGRID_FROM_NAME:LandGo}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mail:
+      enabled: false
+management.health.mail.enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.landgo: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
