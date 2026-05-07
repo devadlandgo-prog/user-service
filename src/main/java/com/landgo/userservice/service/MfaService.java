@@ -18,11 +18,13 @@ public class MfaService {
 
     public void initiateMfa(User user) {
         if (!user.isMfaEnabled()) {
+            log.debug("MFA not enabled for user: {}", user.getId());
             return;
         }
         
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new BadRequestException("Phone number is required for MFA", "MFA_PHONE_REQUIRED");
+            log.warn("MFA initiation failed for user {}: Phone number missing", user.getId());
+            throw new BadRequestException("Phone number is required to receive MFA codes. Please update your profile.", "MFA_PHONE_REQUIRED");
         }
 
         // Default to SMS strategy for now. In a full SOLID implementation, 
@@ -30,8 +32,12 @@ public class MfaService {
         MfaStrategy strategy = strategies.stream()
                 .filter(s -> s.getMethodName().equalsIgnoreCase("SMS"))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("MFA Strategy not found"));
+                .orElseThrow(() -> {
+                    log.error("MFA Strategy 'SMS' not found in registry");
+                    return new RuntimeException("MFA Strategy not found");
+                });
 
+        log.info("Initiating MFA via {} for user: {}", strategy.getMethodName(), user.getId());
         strategy.sendCode(user);
     }
 
