@@ -104,11 +104,24 @@ public class EmailService {
                 """.formatted(userName, resetLink, resetLink);
     }
 
-    private void sendHtmlEmail(String toEmail, String subject, String html) throws MessagingException {
-        if (sendGridApiKey != null && !sendGridApiKey.isBlank()) {
-            sendViaSendGrid(toEmail, subject, html);
-            return;
+    private void sendHtmlEmail(String to, String subject, String htmlContent) {
+        try {
+            if (sendGridApiKey != null && !sendGridApiKey.isBlank()) {
+                log.debug("Attempting to send email via SendGrid to: {}", to);
+                sendViaSendGrid(to, subject, htmlContent);
+                log.info("Email sent successfully via SendGrid to: {}", to);
+            } else {
+                log.debug("SendGrid API key not found, falling back to JavaMailSender for: {}", to);
+                sendViaJavaMail(to, subject, htmlContent);
+                log.info("Email sent successfully via JavaMailSender to: {}", to);
+            }
+        } catch (Exception e) {
+            log.error("CRITICAL: Failed to send email to {}. Error: {}", to, e.getMessage(), e);
+            throw new RuntimeException("Failed to send email", e);
         }
+    }
+
+    private void sendViaJavaMail(String toEmail, String subject, String html) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         helper.setFrom(fromEmail);
