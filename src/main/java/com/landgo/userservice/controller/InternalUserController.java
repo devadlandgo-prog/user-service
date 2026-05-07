@@ -1,5 +1,6 @@
 package com.landgo.userservice.controller;
 
+import com.landgo.userservice.dto.request.VendorProfileRequest;
 import com.landgo.userservice.dto.response.UserResponse;
 import com.landgo.userservice.dto.response.VendorResponse;
 import com.landgo.userservice.enums.Role;
@@ -7,6 +8,7 @@ import com.landgo.userservice.service.AuthService;
 import com.landgo.userservice.service.VendorService;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,5 +41,13 @@ public class InternalUserController {
     @GetMapping("/{userId}/vendor")
     public ResponseEntity<VendorResponse> getVendorProfile(@PathVariable UUID userId) {
         return ResponseEntity.ok(vendorService.getVendorProfile(userId));
+    }
+
+    @PostMapping("/{userId}/vendor")
+    public ResponseEntity<VendorResponse> createVendorProfile(
+            @PathVariable UUID userId,
+            @RequestBody VendorProfileRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(vendorService.createVendorProfile(userId, request));
     }
 }

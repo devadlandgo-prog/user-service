@@ -88,7 +88,7 @@ public class AppleAuthenticationStrategy implements OAuth2AuthenticationStrategy
         String last = userInfo.getLastName().isEmpty() ? "User" : userInfo.getLastName();
         return RegisterRequest.builder()
                 .fullName((first + " " + last).trim()).role("seller")
-                .email(userInfo.getEmail()).firstName(first).lastName(last)
+                .email(userInfo.getEmail())
                 .profileImageUrl(userInfo.getProfileImageUrl())
                 .authProvider(AuthProvider.APPLE).providerId(userInfo.getProviderId()).build();
     }

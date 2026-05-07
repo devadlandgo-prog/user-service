@@ -2,32 +2,112 @@
   "databaseChangeLog": [
     {
       "changeSet": {
+        "id": "0-create-schema",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "CREATE SCHEMA IF NOT EXISTS users;"
+            }
+          }
+        ],
+        "runOnChange": true,
+        "failOnError": false
+      }
+    },
+    {
+      "changeSet": {
         "id": "1-user-service-schema",
         "author": "landgo",
         "changes": [
           {
             "sql": {
-              "sql": "CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, user_type VARCHAR(20) NOT NULL DEFAULT 'SELLER', full_name VARCHAR(100) NOT NULL, first_name VARCHAR(50), last_name VARCHAR(50), email VARCHAR(255) NOT NULL UNIQUE, password VARCHAR(255), phone VARCHAR(20), profile_image_url VARCHAR(500), location VARCHAR(200), professional_bio TEXT, auth_provider VARCHAR(20) NOT NULL DEFAULT 'EMAIL', provider_id VARCHAR(255), role VARCHAR(20) NOT NULL DEFAULT 'SELLER', email_verified BOOLEAN NOT NULL DEFAULT FALSE, active BOOLEAN NOT NULL DEFAULT TRUE, agency_name VARCHAR(200), reco_license_number VARCHAR(50), agent_authorization_accepted BOOLEAN NOT NULL DEFAULT FALSE, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_users_email ON users(email); CREATE INDEX IF NOT EXISTS idx_users_provider ON users(auth_provider, provider_id); CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);"
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, user_type VARCHAR(20) NOT NULL DEFAULT 'SELLER', full_name VARCHAR(100) NOT NULL, first_name VARCHAR(50), last_name VARCHAR(50), email VARCHAR(255) NOT NULL UNIQUE, password VARCHAR(255), phone VARCHAR(20), profile_image_url VARCHAR(500), location VARCHAR(200), professional_bio TEXT, auth_provider VARCHAR(20) NOT NULL DEFAULT 'EMAIL', provider_id VARCHAR(255), role VARCHAR(20) NOT NULL DEFAULT 'SELLER', email_verified BOOLEAN NOT NULL DEFAULT FALSE, active BOOLEAN NOT NULL DEFAULT TRUE, agency_name VARCHAR(200), reco_license_number VARCHAR(50), agent_authorization_accepted BOOLEAN NOT NULL DEFAULT FALSE, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_users_email ON users(email); CREATE INDEX IF NOT EXISTS idx_users_provider ON users(auth_provider, provider_id); CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);"
             }
           },
           {
             "sql": {
-              "sql": "CREATE TABLE IF NOT EXISTS email_verification_tokens (id UUID PRIMARY KEY, code VARCHAR(6) NOT NULL, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, expiry_date TIMESTAMP NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, attempts INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_email_token_user ON email_verification_tokens(user_id);"
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS email_verification_tokens (id UUID PRIMARY KEY, code VARCHAR(6) NOT NULL, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, expiry_date TIMESTAMP NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, attempts INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_email_token_user ON email_verification_tokens(user_id);"
             }
           },
           {
             "sql": {
-              "sql": "CREATE TABLE IF NOT EXISTS password_reset_tokens (id UUID PRIMARY KEY, token VARCHAR(255) NOT NULL UNIQUE, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, expiry_date TIMESTAMP NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_password_token ON password_reset_tokens(token); CREATE INDEX IF NOT EXISTS idx_password_token_user ON password_reset_tokens(user_id);"
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS password_reset_tokens (id UUID PRIMARY KEY, token VARCHAR(255) NOT NULL UNIQUE, user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, expiry_date TIMESTAMP NOT NULL, used BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_password_token ON password_reset_tokens(token); CREATE INDEX IF NOT EXISTS idx_password_token_user ON password_reset_tokens(user_id);"
             }
           },
           {
             "sql": {
-              "sql": "CREATE TABLE IF NOT EXISTS notification_preferences (id UUID PRIMARY KEY, user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, listing_alerts BOOLEAN NOT NULL DEFAULT TRUE, price_drops BOOLEAN NOT NULL DEFAULT TRUE, marketing_emails BOOLEAN NOT NULL DEFAULT FALSE, security_alerts BOOLEAN NOT NULL DEFAULT TRUE, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_notif_pref_user ON notification_preferences(user_id);"
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS notification_preferences (id UUID PRIMARY KEY, user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, listing_alerts BOOLEAN NOT NULL DEFAULT TRUE, price_drops BOOLEAN NOT NULL DEFAULT TRUE, marketing_emails BOOLEAN NOT NULL DEFAULT FALSE, security_alerts BOOLEAN NOT NULL DEFAULT TRUE, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_notif_pref_user ON notification_preferences(user_id);"
             }
           },
           {
             "sql": {
-              "sql": "CREATE TABLE IF NOT EXISTS vendor_profiles (id UUID PRIMARY KEY, user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, company_name VARCHAR(100) NOT NULL, company_description TEXT, company_logo VARCHAR(500), business_license VARCHAR(255), business_address VARCHAR(255) NOT NULL, business_city VARCHAR(100) NOT NULL, business_state VARCHAR(100) NOT NULL, business_zip_code VARCHAR(20) NOT NULL, business_country VARCHAR(100) NOT NULL, website VARCHAR(255), verified BOOLEAN NOT NULL DEFAULT FALSE, rating DECIMAL(3,2), total_reviews INTEGER DEFAULT 0, total_listings INTEGER DEFAULT 0, total_sold INTEGER DEFAULT 0, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_vendor_user ON vendor_profiles(user_id);"
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS vendor_profiles (id UUID PRIMARY KEY, user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE, company_name VARCHAR(100) NOT NULL, company_description TEXT, company_logo VARCHAR(500), business_license VARCHAR(255), business_address VARCHAR(255) NOT NULL, business_city VARCHAR(100) NOT NULL, business_state VARCHAR(100) NOT NULL, business_zip_code VARCHAR(20) NOT NULL, business_country VARCHAR(100) NOT NULL, website VARCHAR(255), verified BOOLEAN NOT NULL DEFAULT FALSE, rating DECIMAL(3,2), total_reviews INTEGER DEFAULT 0, total_listings INTEGER DEFAULT 0, total_sold INTEGER DEFAULT 0, deleted BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); CREATE INDEX IF NOT EXISTS idx_vendor_user ON vendor_profiles(user_id);"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "2-add-mfa-columns",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE, ADD COLUMN IF NOT EXISTS mfa_verified BOOLEAN NOT NULL DEFAULT FALSE;"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "3-add-last-login-at",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL;"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "4-add-email-verified-at-and-timezone",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL, ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) NULL;"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "5-create-notifications-table",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY, user_id UUID NOT NULL, message TEXT NOT NULL, is_read BOOLEAN DEFAULT FALSE, type VARCHAR(50), created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL);"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "changeSet": {
+        "id": "6-align-notifications-with-base-entity",
+        "author": "landgo",
+        "changes": [
+          {
+            "sql": {
+              "sql": "SET search_path TO users; ALTER TABLE notifications ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;"
             }
           }
         ]

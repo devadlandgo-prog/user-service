@@ -24,15 +24,22 @@ public class JwtTokenProvider {
         this.accessTokenExpiration = accessExp;
         this.refreshTokenExpiration = refreshExp;
     }
-    public String generateAccessToken(UserPrincipal up) { return genToken(up.getId(), up.getRole().name(), accessTokenExpiration); }
-    public String generateRefreshToken(UserPrincipal up) { return genToken(up.getId(), up.getRole().name(), refreshTokenExpiration); }
-    private String genToken(UUID userId, String role, long exp) {
+    public String generateAccessToken(UserPrincipal up) { return genToken(up.getId(), up.getRole().name(), "ACCESS", accessTokenExpiration); }
+    public String generateRefreshToken(UserPrincipal up) { return genToken(up.getId(), up.getRole().name(), "REFRESH", refreshTokenExpiration); }
+    public String generateMfaToken(UUID userId) { return genToken(userId, "GUEST", "MFA_SESSION", 300000); } // 5 minutes
+
+    private String genToken(UUID userId, String role, String type, long exp) {
         Date now = new Date();
-        return Jwts.builder().subject(userId.toString()).claim("role", role)
+        return Jwts.builder().subject(userId.toString())
+                .claim("role", role)
+                .claim("type", type)
                 .issuedAt(now).expiration(new Date(now.getTime() + exp)).signWith(key).compact();
     }
     public UUID getUserIdFromToken(String token) {
         return UUID.fromString(Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject());
+    }
+    public Claims getClaimsFromToken(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
     public boolean validateToken(String token) {
         try { Jwts.parser().verifyWith(key).build().parseSignedClaims(token); return true; }

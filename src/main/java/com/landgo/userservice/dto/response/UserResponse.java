@@ -22,11 +22,16 @@ public class UserResponse {
     private AuthProvider authProvider;
     private Role role;
     private boolean emailVerified;
+    private LocalDateTime emailVerifiedAt;
     private boolean active;
     private String agencyName;
     private String recoLicenseNumber;
     private boolean isVendor;
     private boolean isAgent;
+    private boolean mfaEnabled;
+    private boolean mfaVerified;
+    private String timezone;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
