@@ -9,7 +9,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface VendorProfileMapper {
 
-    @Mapping(target = "userId", expression = "java(vendor.getUser().getId())")
+    @Mapping(target = "userId", source = "user.id")
     VendorResponse toResponse(VendorProfile vendor);
 
     @Mapping(target = "id", ignore = true)
