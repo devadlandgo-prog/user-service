@@ -1,0 +1,4 @@
+SET search_path TO users;
+
+ALTER TABLE notifications
+  ADD COLUMN IF NOT EXISTS deleted BOOLEAN NOT NULL DEFAULT FALSE;

@@ -1,0 +1,5 @@
+SET search_path TO users;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP NULL,
+  ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) NULL;
