@@ -10,6 +10,8 @@ import org.mapstruct.Mapping;
 public interface VendorProfileMapper {
 
     @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "ownerName", source = "user.fullName")
+    @Mapping(target = "ownerEmail", source = "user.email")
     VendorResponse toResponse(VendorProfile vendor);
 
     @Mapping(target = "id", ignore = true)
