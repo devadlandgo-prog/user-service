@@ -1,8 +1,4 @@
 databaseChangeLog:
-  - changeSet:
-      id: user-public-001-bootstrap-schemas
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/public/sql/001_bootstrap_schemas.sql
-            relativeToChangelogFile: false
+  - includeAll:
+      path: db/changelog/public/v1.0.0/changelog
+      relativeToChangelogFile: false

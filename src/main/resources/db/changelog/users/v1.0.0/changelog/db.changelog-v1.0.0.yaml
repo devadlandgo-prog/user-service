@@ -1,0 +1,23 @@
+databaseChangeLog:
+  - changeSet:
+      id: user-users-v1-0-0-ddl-tables
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/001_tables.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: user-users-v1-0-0-ddl-indexes
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/002_constraints_indexes.sql
+            relativeToChangelogFile: true
+

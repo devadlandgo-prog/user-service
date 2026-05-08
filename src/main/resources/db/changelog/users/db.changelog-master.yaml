@@ -1,43 +1,4 @@
 databaseChangeLog:
-  - changeSet:
-      id: user-users-001-base-schema
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/001_base_schema.sql
-            relativeToChangelogFile: false
-  - changeSet:
-      id: user-users-002-add-mfa-columns
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/002_add_mfa_columns.sql
-            relativeToChangelogFile: false
-  - changeSet:
-      id: user-users-003-add-last-login-at
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/003_add_last_login_at.sql
-            relativeToChangelogFile: false
-  - changeSet:
-      id: user-users-004-add-email-verified-at-and-timezone
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/004_add_email_verified_at_and_timezone.sql
-            relativeToChangelogFile: false
-  - changeSet:
-      id: user-users-005-create-notifications
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/005_create_notifications.sql
-            relativeToChangelogFile: false
-  - changeSet:
-      id: user-users-006-align-notifications
-      author: landgo
-      changes:
-        - sqlFile:
-            path: db/changelog/users/sql/006_align_notifications_with_base_entity.sql
-            relativeToChangelogFile: false
+  - includeAll:
+      path: db/changelog/users/v1.0.0/changelog
+      relativeToChangelogFile: false

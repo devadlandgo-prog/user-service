@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: user-public-v1-0-0-ddl-schema-bootstrap
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/001_schema_bootstrap.sql
+            relativeToChangelogFile: true
+
