@@ -18,8 +18,21 @@ public class TwilioService {
 
     @PostConstruct
     public void init() {
-        Twilio.init(twilioConfig.getAccountSid(), twilioConfig.getAuthToken());
-        log.info("Twilio initialized with Account SID: {}", twilioConfig.getAccountSid());
+        String accountSid = twilioConfig.getAccountSid();
+        String authToken = twilioConfig.getAuthToken();
+        String verifyServiceSid = twilioConfig.getVerifyServiceSid();
+
+        if (accountSid == null || accountSid.isBlank() || accountSid.contains("${")) {
+            log.warn("Twilio Account SID is missing or unresolved. MFA will not work.");
+            return;
+        }
+
+        Twilio.init(accountSid, authToken);
+        log.info("Twilio initialized with Account SID: {}", accountSid);
+
+        if (verifyServiceSid == null || verifyServiceSid.isBlank() || verifyServiceSid.contains("${")) {
+            log.warn("Twilio Verify Service SID is missing or unresolved. MFA initiation will fail.");
+        }
     }
 
     public void sendVerificationCode(String phoneNumber) {

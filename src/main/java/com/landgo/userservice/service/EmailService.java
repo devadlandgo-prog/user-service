@@ -59,6 +59,7 @@ public class EmailService {
         try {
             String verificationUrl = verifyLinkBaseUrl + "?token=" + verificationToken;
             String html = buildVerificationEmailHtml(userName, code, verificationUrl);
+            log.debug("Verification code for {}: {}", toEmail, code);
             sendHtmlEmail(toEmail, "LandGo - Verify Your Email Address", html);
             log.info("Verification email sent to: {}", toEmail);
         } catch (Exception e) {

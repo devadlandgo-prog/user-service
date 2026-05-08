@@ -77,9 +77,9 @@ springdoc:
     path: /swagger-ui.html
 
 twilio:
-  account-sid: ${TWILIO_ACCOUNT_SID}
-  auth-token: ${TWILIO_AUTH_TOKEN}
-  verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID}
+  account-sid: ${TWILIO_ACCOUNT_SID:}
+  auth-token: ${TWILIO_AUTH_TOKEN:}
+  verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}
   sendgrid:
     api-key: ${TWILIO_SENDGRID_API_KEY:}
     from-email: ${TWILIO_SENDGRID_FROM_EMAIL:noreply@landgo.com}

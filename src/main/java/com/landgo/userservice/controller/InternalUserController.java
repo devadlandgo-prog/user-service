@@ -50,4 +50,9 @@ public class InternalUserController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(vendorService.createVendorProfile(userId, request));
     }
+
+    @GetMapping("/{userId}/verification-code")
+    public ResponseEntity<String> getVerificationCode(@PathVariable UUID userId) {
+        return ResponseEntity.ok(authService.getLatestVerificationCode(userId));
+    }
 }

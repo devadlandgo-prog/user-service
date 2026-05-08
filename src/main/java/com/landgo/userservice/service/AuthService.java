@@ -424,6 +424,17 @@ public class AuthService {
     // ==========================================
 
     @Transactional(readOnly = true)
+    public String getLatestVerificationCode(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        return emailVerificationTokenRepository
+                .findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .map(EmailVerificationToken::getCode)
+                .orElseThrow(() -> new ResourceNotFoundException("No active verification code found for user"));
+    }
+
+    @Transactional(readOnly = true)
     public UserResponse getUserById(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
