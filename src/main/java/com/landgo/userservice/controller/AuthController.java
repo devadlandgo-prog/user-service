@@ -11,10 +11,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "Register a new user")
     public ResponseEntity<ApiResponse<UserResponse>> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("Received registration request: {}", request);
         UserResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Registration successful. Please verify your email.", response));
@@ -45,6 +48,8 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
+
+
     @PostMapping("/logout")
     @Operation(summary = "Logout current user")
     public ResponseEntity<ApiResponse<Void>> logout(@CurrentUser UserPrincipal userPrincipal) {
@@ -54,9 +59,16 @@ public class AuthController {
 
     @PostMapping("/verify")
     @Operation(summary = "Verify email with 4-digit code")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-        authService.verifyEmail(request);
-        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", null));
+    public ResponseEntity<ApiResponse<UserResponse>> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        UserResponse response = authService.verifyEmail(request);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", response));
+    }
+
+    @GetMapping("/verify-link")
+    @Operation(summary = "Verify email with one-click token link")
+    public ResponseEntity<ApiResponse<UserResponse>> verifyEmailByLink(@RequestParam String token) {
+        UserResponse response = authService.verifyEmailByToken(token);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully", response));
     }
 
     @PostMapping("/resend-verification")
@@ -89,9 +101,9 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh access token")
-    public ResponseEntity<ApiResponse<Void>> refreshToken() {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(ApiResponse.error("Refresh token endpoint is not implemented yet", "NOT_IMPLEMENTED"));
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        AuthResponse response = authService.refreshAccessToken(request);
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
     }
 
     @PostMapping("/reset-password")
@@ -108,5 +120,19 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(userPrincipal, request);
         return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
+    }
+
+    @PostMapping("/mfa/verify")
+    @Operation(summary = "Verify MFA code to complete login")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
+        AuthResponse response = authService.verifyMfa(request);
+        return ResponseEntity.ok(ApiResponse.success("MFA verified successfully", response));
+    }
+
+    @PostMapping("/mfa/resend")
+    @Operation(summary = "Resend MFA code")
+    public ResponseEntity<ApiResponse<Void>> resendMfa(@Valid @RequestBody MfaResendRequest request) {
+        authService.resendMfa(request);
+        return ResponseEntity.ok(ApiResponse.success("MFA code resent successfully", null));
     }
 }

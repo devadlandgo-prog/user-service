@@ -61,7 +61,6 @@ public class GoogleAuthenticationStrategy implements OAuth2AuthenticationStrateg
         if (fullName.isEmpty()) fullName = userInfo.getEmail().split("@")[0];
         return RegisterRequest.builder()
                 .fullName(fullName).email(userInfo.getEmail()).role("seller")
-                .firstName(userInfo.getFirstName()).lastName(userInfo.getLastName())
                 .profileImageUrl(userInfo.getProfileImageUrl())
                 .authProvider(AuthProvider.GOOGLE).providerId(userInfo.getProviderId()).build();
     }

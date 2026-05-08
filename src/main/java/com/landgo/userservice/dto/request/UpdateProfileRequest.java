@@ -10,4 +10,5 @@ public class UpdateProfileRequest {
     @Size(max = 500) private String profileImageUrl;
     @Size(max = 200) private String location;
     @Size(max = 2000) private String professionalBio;
+    @Size(max = 50) private String timezone;
 }

@@ -33,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Slf4j
 @Service
@@ -48,6 +51,8 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
+    private final MfaService mfaService;
+    private final LoginAuditService loginAuditService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -59,12 +64,10 @@ public class AuthService {
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
+        log.info("Attempting to register user with email: {}", request.getEmail());
         if (userRepository.existsByEmail(request.getEmail())) {
+            log.warn("Registration failed: Email {} already exists", request.getEmail());
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
-        }
-
-        if (request.getConfirmPassword() != null && !request.getPassword().equals(request.getConfirmPassword())) {
-            throw new BadRequestException("Passwords do not match", "VALIDATION_ERROR");
         }
 
         Role requestedRole = mapRequestedRole(request.getRole());
@@ -77,9 +80,18 @@ public class AuthService {
             }
         }
 
-        request.setFullName((request.getFirstName().trim() + " " + request.getLastName().trim()).trim());
+        if (request.getFullName() == null || request.getFullName().isBlank()) {
+            throw new BadRequestException("Full name is required", "VALIDATION_ERROR");
+        }
 
+        String[] parts = request.getFullName().trim().split("\\s+", 2);
+        // Keep internal first/last fields populated from canonical fullName request
+        // (DB and downstream templates still read firstName in some places).
+        String firstName = parts[0];
+        String lastName = parts.length > 1 ? parts[1] : "";
         User user = userMapper.toEntity(request);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
         user.setAuthProvider(AuthProvider.EMAIL);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(requestedRole);
@@ -88,8 +100,9 @@ public class AuthService {
         user.setRecoLicenseNumber(request.getLicenseNumber());
 
         user = userRepository.save(user);
-        log.info("{} registered: {}", user.getRole(), user.getEmail());
+        log.info("User registered successfully: {}", user.getId());
         generateAndSendVerificationCode(user);
+        log.debug("Verification email process initiated for: {}", user.getEmail());
         return userMapper.toResponse(user);
     }
 
@@ -99,12 +112,25 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
+        log.info("Attempting login for email: {}", request.getEmail());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        log.info("User logged in: {}", user.getEmail());
+        log.info("User login attempt: {}", user.getEmail());
+        
+        if (user.isMfaEnabled()) {
+            log.info("MFA required for user: {}", user.getEmail());
+            mfaService.initiateMfa(user);
+            String mfaSession = tokenProvider.generateMfaToken(user.getId());
+            return AuthResponse.builder()
+                    .mfaRequired(true)
+                    .mfaSession(mfaSession)
+                    .user(userMapper.toResponse(user))
+                    .build();
+        }
+
         return generateAuthResponse(user);
     }
 
@@ -133,7 +159,65 @@ public class AuthService {
                 });
 
         log.info("OAuth2 login successful for: {}", user.getEmail());
+        
+        if (user.isMfaEnabled()) {
+            log.info("MFA required for user: {}", user.getEmail());
+            mfaService.initiateMfa(user);
+            String mfaSession = tokenProvider.generateMfaToken(user.getId());
+            return AuthResponse.builder()
+                    .mfaRequired(true)
+                    .mfaSession(mfaSession)
+                    .user(userMapper.toResponse(user))
+                    .build();
+        }
+
         return generateAuthResponse(user);
+    }
+
+    // ==========================================
+    // MFA VERIFICATION
+    // ==========================================
+
+    @Transactional(readOnly = true)
+    public AuthResponse verifyMfa(MfaVerifyRequest request) {
+        if (!tokenProvider.validateToken(request.getMfaSession())) {
+            throw new BadRequestException("Invalid or expired MFA session", "MFA_SESSION_EXPIRED");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getMfaSession());
+        if (!"MFA_SESSION".equals(claims.get("type"))) {
+            throw new BadRequestException("Invalid MFA session type", "MFA_SESSION_INVALID");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!mfaService.verifyMfa(user, request.getCode())) {
+            throw new BadRequestException("Invalid MFA code", "MFA_INVALID_CODE");
+        }
+
+        log.info("MFA verified successfully for user: {}", user.getEmail());
+        return generateAuthResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public void resendMfa(MfaResendRequest request) {
+        if (!tokenProvider.validateToken(request.getMfaSession())) {
+            throw new BadRequestException("Invalid or expired MFA session", "MFA_SESSION_EXPIRED");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getMfaSession());
+        if (!"MFA_SESSION".equals(claims.get("type"))) {
+            throw new BadRequestException("Invalid MFA session type", "MFA_SESSION_INVALID");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        log.info("Resending MFA code for user: {}", user.getEmail());
+        mfaService.initiateMfa(user);
     }
 
     // ==========================================
@@ -197,6 +281,7 @@ public class AuthService {
         if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl());
         if (request.getLocation() != null) user.setLocation(request.getLocation().isBlank() ? null : request.getLocation());
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
+        if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
 
         user = userRepository.save(user);
         log.info("Profile updated for user: {}", user.getEmail());
@@ -208,7 +293,7 @@ public class AuthService {
     // ==========================================
 
     @Transactional
-    public void verifyEmail(VerifyEmailRequest request) {
+    public UserResponse verifyEmail(VerifyEmailRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("No account found with this email address"));
 
@@ -230,12 +315,29 @@ public class AuthService {
             throw new BadRequestException("Invalid verification code. " + remaining + " attempt(s) remaining.", "AUTH_INVALID_CODE");
         }
 
-        token.setUsed(true);
-        emailVerificationTokenRepository.save(token);
-        user.setEmailVerified(true);
-        userRepository.save(user);
-        emailVerificationTokenRepository.invalidateAllTokensForUser(user);
-        log.info("Email verified successfully for user: {}", user.getEmail());
+        return completeEmailVerification(token);
+    }
+
+    @Transactional
+    public UserResponse verifyEmailByToken(String tokenValue) {
+        UUID tokenId;
+        try {
+            tokenId = UUID.fromString(tokenValue);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid verification link", "AUTH_INVALID_CODE");
+        }
+
+        EmailVerificationToken token = emailVerificationTokenRepository.findById(tokenId)
+                .orElseThrow(() -> new BadRequestException("Invalid verification link", "AUTH_INVALID_CODE"));
+
+        if (token.isUsed()) {
+            throw new BadRequestException("Verification link is no longer valid. Please request a new one.", "AUTH_INVALID_CODE");
+        }
+        if (token.isExpired()) {
+            throw new BadRequestException("Verification link has expired. Please request a new one.", "AUTH_CODE_EXPIRED");
+        }
+
+        return completeEmailVerification(token);
     }
 
     @Transactional
@@ -274,6 +376,28 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException("Invalid or expired password reset link", "AUTH_INVALID_OR_EXPIRED_TOKEN"));
         if (resetToken.isExpired())
             throw new BadRequestException("Password reset link has expired. Please request a new one.", "AUTH_INVALID_OR_EXPIRED_TOKEN");
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
+        if (!tokenProvider.validateToken(request.getRefreshToken())) {
+            throw new BadRequestException("Invalid or expired refresh token", "AUTH_INVALID_REFRESH_TOKEN");
+        }
+
+        var claims = tokenProvider.getClaimsFromToken(request.getRefreshToken());
+        Object tokenType = claims.get("type");
+        if (!"REFRESH".equals(tokenType)) {
+            throw new BadRequestException("Invalid token type for refresh", "AUTH_INVALID_REFRESH_TOKEN");
+        }
+
+        UUID userId = UUID.fromString(claims.getSubject());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!user.isActive()) {
+            throw new BadRequestException("User account is inactive", "AUTH_ACCOUNT_INACTIVE");
+        }
+
+        return generateAuthResponse(user);
     }
 
     @Transactional
@@ -315,6 +439,17 @@ public class AuthService {
         log.info("User {} role updated to {}", userId, role);
     }
 
+    @Transactional
+    public void deleteAccount(UserPrincipal userPrincipal) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActive(false);
+        user.setMfaEnabled(false);
+        user.setMfaVerified(false);
+        userRepository.save(user);
+        log.info("Account deactivated for user: {}", user.getEmail());
+    }
+
     // ==========================================
     // HELPERS
     // ==========================================
@@ -325,10 +460,27 @@ public class AuthService {
         EmailVerificationToken token = EmailVerificationToken.builder()
                 .code(code).user(user).expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)).build();
         emailVerificationTokenRepository.save(token);
-        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code);
+        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code, token.getId().toString());
+    }
+
+    private UserResponse completeEmailVerification(EmailVerificationToken token) {
+        User user = token.getUser();
+        if (user.isEmailVerified()) {
+            throw new BadRequestException("Email is already verified", "AUTH_ALREADY_VERIFIED");
+        }
+
+        token.setUsed(true);
+        emailVerificationTokenRepository.save(token);
+        user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
+        user = userRepository.save(user);
+        emailVerificationTokenRepository.invalidateAllTokensForUser(user);
+        log.info("Email verified successfully for user: {}", user.getEmail());
+        return userMapper.toResponse(user);
     }
 
     private AuthResponse generateAuthResponse(User user) {
+        loginAuditService.recordLastLogin(user.getId());
         UserPrincipal userPrincipal = UserPrincipal.create(user);
         String accessToken = tokenProvider.generateAccessToken(userPrincipal);
         String refreshToken = tokenProvider.generateRefreshToken(userPrincipal);
@@ -344,9 +496,35 @@ public class AuthService {
         }
         return switch (role.trim().toLowerCase()) {
             case "buyer", "seller" -> Role.SELLER;
-            case "professional" -> Role.AGENT;
+            case "professional", "agent" -> Role.AGENT;
+            case "vendor" -> Role.VENDOR;
             case "admin" -> Role.ADMIN;
-            default -> throw new BadRequestException("Role must be one of: buyer, seller, professional, admin", "VALIDATION_ERROR");
+            default -> throw new BadRequestException("Role must be one of: buyer, seller, vendor, agent, professional, admin", "VALIDATION_ERROR");
         };
+    }
+
+    @Transactional
+    public UserResponse updateMfaStatus(UserPrincipal userPrincipal, MfaSetupRequest request) {
+        User user = userRepository.findById(userPrincipal.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        user.setMfaEnabled(request.isEnabled());
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            user.setPhone(request.getPhone());
+        }
+
+        if (user.isMfaEnabled()) {
+            // Trigger a verification to ensure the phone works
+            mfaService.initiateMfa(user);
+        }
+
+        user = userRepository.save(user);
+        log.info("MFA status updated for user: {}. Enabled: {}", user.getEmail(), user.isMfaEnabled());
+        return userMapper.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toResponse);
     }
 }

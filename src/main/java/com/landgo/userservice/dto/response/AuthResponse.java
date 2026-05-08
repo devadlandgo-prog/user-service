@@ -9,4 +9,7 @@ public class AuthResponse {
     private String tokenType;
     private Long expiresIn;
     private UserResponse user;
+    private boolean mfaRequired;
+    private String mfaSession;
+
 }
