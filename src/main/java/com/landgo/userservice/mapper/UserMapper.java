@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 public interface UserMapper {
 
     @Mapping(target = "isVendor", expression = "java(user.isVendor())")
-    @Mapping(target = "isAgent", expression = "java(user.isAgent())")
+    @Mapping(target = "isProfessional", expression = "java(user.isProfessional())")
     @Mapping(target = "fullName", expression = "java(user.getFullName())")
     UserResponse toResponse(User user);
 

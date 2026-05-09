@@ -27,7 +27,7 @@ public class User extends BaseEntity {
     private AuthProvider authProvider = AuthProvider.EMAIL;
     @Column(name = "provider_id") private String providerId;
     @Enumerated(EnumType.STRING) @Column(name = "role", nullable = false, length = 20) @Builder.Default
-    private Role role = Role.SELLER;
+    private Role role = Role.VENDOR;
     @Column(name = "email_verified") @Builder.Default private boolean emailVerified = false;
     @Column(name = "email_verified_at") private LocalDateTime emailVerifiedAt;
     @Column(name = "active") @Builder.Default private boolean active = true;
@@ -40,10 +40,11 @@ public class User extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "is_professional") @Builder.Default private boolean isProfessional = false;
+
     public String getFullName() {
         if (fullName != null && !fullName.isBlank()) return fullName;
         return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
     }
     public boolean isVendor() { return role == Role.VENDOR; }
-    public boolean isAgent() { return userType == UserType.AGENT || role == Role.AGENT; }
 }

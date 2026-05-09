@@ -71,7 +71,9 @@ public class AuthService {
         }
 
         Role requestedRole = mapRequestedRole(request.getRole());
-        if (requestedRole == Role.AGENT) {
+        boolean isProfessional = isProfessionalRole(request.getRole());
+
+        if (isProfessional) {
             if (request.getAgencyName() == null || request.getAgencyName().isBlank()) {
                 throw new BadRequestException("Agency name is required for professional registration", "AUTH_AGENT_FIELDS_REQUIRED");
             }
@@ -85,8 +87,6 @@ public class AuthService {
         }
 
         String[] parts = request.getFullName().trim().split("\\s+", 2);
-        // Keep internal first/last fields populated from canonical fullName request
-        // (DB and downstream templates still read firstName in some places).
         String firstName = parts[0];
         String lastName = parts.length > 1 ? parts[1] : "";
         User user = userMapper.toEntity(request);
@@ -95,8 +95,9 @@ public class AuthService {
         user.setAuthProvider(AuthProvider.EMAIL);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(requestedRole);
-        user.setUserType(requestedRole == Role.AGENT ? UserType.AGENT : UserType.SELLER);
-        user.setAgentAuthorizationAccepted(requestedRole == Role.AGENT);
+        user.setUserType(mapUserType(request.getRole()));
+        user.setProfessional(isProfessional);
+        user.setAgentAuthorizationAccepted(isProfessional);
         user.setRecoLicenseNumber(request.getLicenseNumber());
 
         user = userRepository.save(user);
@@ -150,8 +151,9 @@ public class AuthService {
                         throw new ConflictException("Email already registered with different provider", "AUTH_EMAIL_EXISTS");
                     RegisterRequest rr = strategy.toRegisterRequest(userInfo);
                     User newUser = userMapper.toEntity(rr);
-                    newUser.setRole(Role.SELLER);
+                    newUser.setRole(Role.VENDOR);
                     newUser.setUserType(UserType.SELLER);
+                    newUser.setProfessional(false);
                     newUser.setAuthProvider(request.getAuthProvider());
                     newUser.setProviderId(userInfo.getProviderId());
                     newUser.setEmailVerified(true);
@@ -506,11 +508,25 @@ public class AuthService {
             throw new BadRequestException("Role is required", "VALIDATION_ERROR");
         }
         return switch (role.trim().toLowerCase()) {
-            case "buyer", "seller" -> Role.SELLER;
-            case "professional", "agent" -> Role.AGENT;
-            case "vendor" -> Role.VENDOR;
+            case "buyer", "seller", "vendor", "professional", "agent" -> Role.VENDOR;
             case "admin" -> Role.ADMIN;
             default -> throw new BadRequestException("Role must be one of: buyer, seller, vendor, agent, professional, admin", "VALIDATION_ERROR");
+        };
+    }
+
+    private UserType mapUserType(String role) {
+        if (role == null) return UserType.SELLER;
+        return switch (role.trim().toLowerCase()) {
+            case "buyer" -> UserType.BUYER;
+            default -> UserType.SELLER;
+        };
+    }
+
+    private boolean isProfessionalRole(String role) {
+        if (role == null) return false;
+        return switch (role.trim().toLowerCase()) {
+            case "professional", "agent" -> true;
+            default -> false;
         };
     }
 

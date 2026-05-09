@@ -21,3 +21,13 @@ databaseChangeLog:
             path: ../ddl/002_constraints_indexes.sql
             relativeToChangelogFile: true
 
+  - changeSet:
+      id: user-users-v1-0-0-ddl-role-migration
+      author: landgo
+      runOnChange: false
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/003_user_type_role_migration.sql
+            relativeToChangelogFile: true

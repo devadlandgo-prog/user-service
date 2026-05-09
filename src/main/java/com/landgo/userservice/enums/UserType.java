@@ -1,2 +1,2 @@
 package com.landgo.userservice.enums;
-public enum UserType { SELLER, AGENT }
+public enum UserType { BUYER, SELLER }

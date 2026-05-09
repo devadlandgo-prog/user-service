@@ -27,7 +27,7 @@ public class UserResponse {
     private String agencyName;
     private String recoLicenseNumber;
     private boolean isVendor;
-    private boolean isAgent;
+    private boolean isProfessional;
     private boolean mfaEnabled;
     private boolean mfaVerified;
     private String timezone;
