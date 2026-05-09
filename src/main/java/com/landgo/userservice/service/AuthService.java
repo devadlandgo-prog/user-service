@@ -598,4 +598,12 @@ public class AuthService {
         userRepository.save(user);
         log.info("Admin deactivated professional user: {}", userId);
     }
+
+    @Transactional
+    public void deleteUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        userRepository.delete(user);
+        log.info("Admin performed hard delete of user: {}", userId);
+    }
 }

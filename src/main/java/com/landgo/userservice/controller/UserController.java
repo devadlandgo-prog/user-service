@@ -128,4 +128,11 @@ public class UserController {
                 .build();
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+    @DeleteMapping("/admin/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Hard delete any user account (admin)")
+    public ResponseEntity<ApiResponse<Void>> deleteUserByAdmin(@PathVariable UUID id) {
+        authService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    }
 }
