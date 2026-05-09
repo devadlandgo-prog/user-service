@@ -564,6 +564,11 @@ public class AuthService {
         return userRepository.findByIsProfessionalTrue(pageable).map(userMapper::toResponse);
     }
 
+    @Transactional(readOnly = true)
+    public Page<UserResponse> searchProfessionals(String query, Pageable pageable) {
+        return userRepository.searchProfessionals(query, pageable).map(userMapper::toResponse);
+    }
+
     @Transactional
     public UserResponse updateProfessionalProfile(UUID userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)

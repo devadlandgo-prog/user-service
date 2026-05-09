@@ -24,6 +24,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countByRole(Role role);
     Page<User> findByIsProfessionalTrue(Pageable pageable);
 
+    @Query("SELECT u FROM User u WHERE u.isProfessional = true AND u.active = true AND (" +
+           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(u.agencyName) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(u.professionalBio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(u.location) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<User> searchProfessionals(@Param("q") String query, Pageable pageable);
+
     @Modifying
     @Query("UPDATE User u SET u.lastLoginAt = :ts WHERE u.id = :id")
     void updateLastLoginAt(@Param("id") UUID id, @Param("ts") LocalDateTime ts);
