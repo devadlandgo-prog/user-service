@@ -60,7 +60,7 @@ app:
       liquibase-schema: ${LIQUIBASE_PUBLIC_LIQUIBASE_SCHEMA:public}
       change-log-table: ${LIQUIBASE_PUBLIC_CHANGELOG_TABLE:databasechangelog_user_public}
       change-log-lock-table: ${LIQUIBASE_PUBLIC_CHANGELOG_LOCK_TABLE:databasechangeloglock_user_public}
-      drop-first: true
+      drop-first: false
     users:
       enabled: ${LIQUIBASE_USERS_ENABLED:true}
       change-log: ${LIQUIBASE_USERS_CHANGELOG:classpath:db/changelog/users/db.changelog-master.yaml}
@@ -68,7 +68,7 @@ app:
       liquibase-schema: ${LIQUIBASE_USERS_LIQUIBASE_SCHEMA:users}
       change-log-table: ${LIQUIBASE_USERS_CHANGELOG_TABLE:databasechangelog_users}
       change-log-lock-table: ${LIQUIBASE_USERS_CHANGELOG_LOCK_TABLE:databasechangeloglock_users}
-      drop-first: true
+      drop-first: false
 
 springdoc:
   api-docs:
