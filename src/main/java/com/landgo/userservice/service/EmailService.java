@@ -30,7 +30,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate;
 
-    @Value("${app.mail.from:noreply@landgo.com}")
+    @Value("${app.mail.from:noreply@landgo.ca}")
     private String fromEmail;
 
     @Value("${app.mail.reset-password-url:http://localhost:3000/reset-password}")
@@ -48,7 +48,7 @@ public class EmailService {
     @Value("${twilio.sendgrid.api-key:}")
     private String sendGridApiKey;
 
-    @Value("${twilio.sendgrid.from-email:noreply@landgo.com}")
+    @Value("${twilio.sendgrid.from-email:noreply@landgo.ca}")
     private String sendGridFromEmail;
 
     @Value("${twilio.sendgrid.from-name:LandGo}")
