@@ -82,7 +82,7 @@ twilio:
   verify-service-sid: ${TWILIO_VERIFY_SERVICE_SID:}
   sendgrid:
     api-key: ${TWILIO_SENDGRID_API_KEY:}
-    from-email: ${TWILIO_SENDGRID_FROM_EMAIL:noreply@landgo.com}
+    from-email: ${TWILIO_SENDGRID_FROM_EMAIL:noreply@landgo.ca}
     from-name: ${TWILIO_SENDGRID_FROM_NAME:LandGo}
 
 management:
