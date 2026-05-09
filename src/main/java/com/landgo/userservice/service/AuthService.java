@@ -554,4 +554,43 @@ public class AuthService {
     public Page<UserResponse> getAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable).map(userMapper::toResponse);
     }
+
+    // ==========================================
+    // ADMIN — PROFESSIONALS
+    // ==========================================
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllProfessionals(Pageable pageable) {
+        return userRepository.findByIsProfessionalTrue(pageable).map(userMapper::toResponse);
+    }
+
+    @Transactional
+    public UserResponse updateProfessionalProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            user.setFullName(request.getFullName());
+            String[] parts = request.getFullName().trim().split("\\s+", 2);
+            user.setFirstName(parts[0]);
+            user.setLastName(parts.length > 1 ? parts[1] : "");
+        }
+        if (request.getPhone() != null) user.setPhone(request.getPhone().isBlank() ? null : request.getPhone());
+        if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl());
+        if (request.getLocation() != null) user.setLocation(request.getLocation().isBlank() ? null : request.getLocation());
+        if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
+        if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
+        user = userRepository.save(user);
+        log.info("Admin updated professional profile for user: {}", userId);
+        return userMapper.toResponse(user);
+    }
+
+    @Transactional
+    public void deactivateProfessional(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setActive(false);
+        user.setProfessional(false);
+        userRepository.save(user);
+        log.info("Admin deactivated professional user: {}", userId);
+    }
 }

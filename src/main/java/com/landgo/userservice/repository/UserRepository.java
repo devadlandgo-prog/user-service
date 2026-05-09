@@ -13,12 +13,16 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
     boolean existsByEmail(String email);
     long countByRole(Role role);
+    Page<User> findByIsProfessionalTrue(Pageable pageable);
 
     @Modifying
     @Query("UPDATE User u SET u.lastLoginAt = :ts WHERE u.id = :id")
