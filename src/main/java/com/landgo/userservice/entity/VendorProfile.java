@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -45,6 +48,27 @@ public class VendorProfile extends BaseEntity {
 
     @Column(name = "website")
     private String website;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "specialization", columnDefinition = "text[]")
+    private List<String> specialization;
+
+    @Column(name = "years_of_experience")
+    private Integer yearsOfExperience;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "service_area", columnDefinition = "text[]")
+    private List<String> serviceArea;
+
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "certifications", columnDefinition = "text[]")
+    private List<String> certifications;
+
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
 
     @Column(name = "verified")
     @Builder.Default

@@ -509,3 +509,316 @@ Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no pas
 [2m2026-05-09T00:24:30.068+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-9][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '05d18f80-46ce-4cc8-8018-711e4442db63' - Code: NOT_FOUND
 [2m2026-05-09T00:24:30.117+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [io-8081-exec-10][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '05d18f80-46ce-4cc8-8018-711e4442db63' - Code: NOT_FOUND
 [2m2026-05-09T00:24:30.152+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-1][0;39m [2m[0;39m[36mc.l.userservice.service.VendorService   [0;39m [2m:[0;39m Vendor profile created for user: 05d18f80-46ce-4cc8-8018-711e4442db63
+[2m2026-05-09T03:34:58.967+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-5][0;39m [2m[0;39m[36mc.l.u.controller.AuthController         [0;39m [2m:[0;39m Received registration request: RegisterRequest(fullName=Rahul Sharma, email=test.user.1778277898@landgo.com, role=buyer, password=SecurePass@123, phone=+919876543210, agencyName=null, licenseNumber=null, authProvider=EMAIL, providerId=null, profileImageUrl=null)
+[2m2026-05-09T03:34:59.038+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-5][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Attempting to register user with email: test.user.1778277898@landgo.com
+[2m2026-05-09T03:34:59.418+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-5][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m User registered successfully: 5458d53a-f525-4138-9a96-5e30ff43e445
+[2m2026-05-09T03:34:59.574+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-5][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m CRITICAL: Failed to send email to test.user.1778277898@landgo.com. Error: Authentication failed
+
+org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:34:59.596+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-5][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m Failed to send verification email to: test.user.1778277898@landgo.com
+
+java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:34:59.601+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-5][0;39m [2m[0;39m[36m.a.i.SimpleAsyncUncaughtExceptionHandler[0;39m [2m:[0;39m Unexpected exception occurred invoking async method: public void com.landgo.userservice.service.EmailService.sendVerificationEmail(java.lang.String,java.lang.String,java.lang.String,java.lang.String)
+
+java.lang.RuntimeException: Failed to send verification email
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:66) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	... 11 common frames omitted
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:34:59.682+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-6][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Attempting login for email: test.user.1778277898@landgo.com
+[2m2026-05-09T03:34:59.914+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-6][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m User login attempt: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:00.212+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-9][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Profile updated for user: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:00.490+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-1][0;39m [2m[0;39m[36mc.l.u.s.NotificationPreferencesService  [0;39m [2m:[0;39m Notification preferences updated for user: 5458d53a-f525-4138-9a96-5e30ff43e445
+[2m2026-05-09T03:35:02.860+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-5][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Password reset token generated for user: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:02.868+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-6][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m CRITICAL: Failed to send email to test.user.1778277898@landgo.com. Error: Authentication failed
+
+org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendPasswordResetEmail(EmailService.java:74) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:02.869+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-6][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m Failed to send password reset email to: test.user.1778277898@landgo.com
+
+java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendPasswordResetEmail(EmailService.java:74) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:02.869+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-6][0;39m [2m[0;39m[36m.a.i.SimpleAsyncUncaughtExceptionHandler[0;39m [2m:[0;39m Unexpected exception occurred invoking async method: public void com.landgo.userservice.service.EmailService.sendPasswordResetEmail(java.lang.String,java.lang.String,java.lang.String)
+
+java.lang.RuntimeException: Failed to send password reset email
+	at com.landgo.userservice.service.EmailService.sendPasswordResetEmail(EmailService.java:78) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendPasswordResetEmail(EmailService.java:74) ~[classes/:na]
+	... 11 common frames omitted
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:02.910+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-6][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: Invalid or expired password reset link - Code: AUTH_INVALID_OR_EXPIRED_TOKEN
+[2m2026-05-09T03:35:02.956+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-7][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Verification code resent to: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:02.962+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-7][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m CRITICAL: Failed to send email to test.user.1778277898@landgo.com. Error: Authentication failed
+
+org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:02.963+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-7][0;39m [2m[0;39m[36mc.l.userservice.service.EmailService    [0;39m [2m:[0;39m Failed to send verification email to: test.user.1778277898@landgo.com
+
+java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:02.963+05:30[0;39m [31mERROR[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [         task-7][0;39m [2m[0;39m[36m.a.i.SimpleAsyncUncaughtExceptionHandler[0;39m [2m:[0;39m Unexpected exception occurred invoking async method: public void com.landgo.userservice.service.EmailService.sendVerificationEmail(java.lang.String,java.lang.String,java.lang.String,java.lang.String)
+
+java.lang.RuntimeException: Failed to send verification email
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:66) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:351) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:765) ~[spring-aop-6.1.3.jar:6.1.3]
+	at org.springframework.aop.interceptor.AsyncExecutionInterceptor.lambda$invoke$0(AsyncExecutionInterceptor.java:113) ~[spring-aop-6.1.3.jar:6.1.3]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:1575) ~[na:na]
+Caused by: java.lang.RuntimeException: Failed to send email
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:120) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendVerificationEmail(EmailService.java:62) ~[classes/:na]
+	... 11 common frames omitted
+Caused by: org.springframework.mail.MailAuthenticationException: Authentication failed
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:402) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.send(JavaMailSenderImpl.java:350) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSender.send(JavaMailSender.java:101) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at com.landgo.userservice.service.EmailService.sendViaJavaMail(EmailService.java:131) ~[classes/:na]
+	at com.landgo.userservice.service.EmailService.sendHtmlEmail(EmailService.java:115) ~[classes/:na]
+	... 12 common frames omitted
+Caused by: jakarta.mail.AuthenticationFailedException: failed to connect, no password specified?
+	at jakarta.mail.Service.connect(Service.java:379) ~[jakarta.mail-2.0.2.jar:na]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.connectTransport(JavaMailSenderImpl.java:480) ~[spring-context-support-6.1.3.jar:6.1.3]
+	at org.springframework.mail.javamail.JavaMailSenderImpl.doSend(JavaMailSenderImpl.java:399) ~[spring-context-support-6.1.3.jar:6.1.3]
+	... 16 common frames omitted
+
+[2m2026-05-09T03:35:03.340+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-8][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Password changed for user: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:03.385+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-9][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m User logged out: 5458d53a-f525-4138-9a96-5e30ff43e445
+[2m2026-05-09T03:35:03.425+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [io-8081-exec-10][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m Attempting login for email: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:03.598+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [io-8081-exec-10][0;39m [2m[0;39m[36mc.l.userservice.service.AuthService     [0;39m [2m:[0;39m User login attempt: test.user.1778277898@landgo.com
+[2m2026-05-09T03:35:04.951+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-1][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '5458d53a-f525-4138-9a96-5e30ff43e445' - Code: NOT_FOUND
+[2m2026-05-09T03:35:05.536+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-2][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '5458d53a-f525-4138-9a96-5e30ff43e445' - Code: NOT_FOUND
+[2m2026-05-09T03:35:05.838+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-3][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '5458d53a-f525-4138-9a96-5e30ff43e445' - Code: NOT_FOUND
+[2m2026-05-09T03:35:06.270+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-4][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '5458d53a-f525-4138-9a96-5e30ff43e445' - Code: NOT_FOUND
+[2m2026-05-09T03:35:06.355+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-5][0;39m [2m[0;39m[36mc.l.u.exception.GlobalExceptionHandler  [0;39m [2m:[0;39m API Exception: VendorProfile not found with userId : '5458d53a-f525-4138-9a96-5e30ff43e445' - Code: NOT_FOUND
+[2m2026-05-09T03:35:06.426+05:30[0;39m [32m INFO[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [nio-8081-exec-6][0;39m [2m[0;39m[36mc.l.userservice.service.VendorService   [0;39m [2m:[0;39m Vendor profile created for user: 5458d53a-f525-4138-9a96-5e30ff43e445
+[2m2026-05-10T07:24:48.648+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=2m14s882ms).
+[2m2026-05-10T07:30:17.369+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m28s805ms).
+[2m2026-05-10T07:32:26.663+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m39s275ms).
+[2m2026-05-10T07:33:39.784+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1m13s123ms).
+[2m2026-05-10T07:38:33.396+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=4m23s503ms).
+[2m2026-05-10T07:44:31.928+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m28s505ms).
+[2m2026-05-10T07:50:00.459+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m28s532ms).
+[2m2026-05-10T08:06:25.351+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s863ms).
+[2m2026-05-10T08:25:23.335+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m27s774ms).
+[2m2026-05-10T08:30:51.710+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5m28s376ms).
+[2m2026-05-10T08:39:44.337+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=8m22s617ms).
+[2m2026-05-10T08:55:39.215+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s879ms).
+[2m2026-05-10T09:12:09.089+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m59s855ms).
+[2m2026-05-10T09:28:13.851+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m34s742ms).
+[2m2026-05-10T09:40:46.577+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m32s691ms).
+[2m2026-05-10T09:56:41.464+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s887ms).
+[2m2026-05-10T10:13:06.511+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m55s17ms).
+[2m2026-05-10T10:29:31.428+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s882ms).
+[2m2026-05-10T10:41:29.091+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m27s651ms).
+[2m2026-05-10T10:57:54.066+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s953ms).
+[2m2026-05-10T11:14:18.954+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s875ms).
+[2m2026-05-10T11:29:53.580+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m34s628ms).
+[2m2026-05-10T11:42:33.085+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m39s409ms).
+[2m2026-05-10T11:58:57.947+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s848ms).
+[2m2026-05-10T12:15:14.282+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m46s321ms).
+[2m2026-05-10T12:30:50.314+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m36s32ms).
+[2m2026-05-10T12:43:32.796+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m42s451ms).
+[2m2026-05-10T12:59:57.670+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s862ms).
+[2m2026-05-10T13:16:22.600+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s914ms).
+[2m2026-05-10T13:32:17.488+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=15m54s890ms).
+[2m2026-05-10T13:44:50.406+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m32s896ms).
+[2m2026-05-10T13:55:13.041+05:30[0;39m [33m WARN[0;39m [35m79182[0;39m [2m---[0;39m [2m[user-service] [l-1 housekeeper][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=10m22s630ms).

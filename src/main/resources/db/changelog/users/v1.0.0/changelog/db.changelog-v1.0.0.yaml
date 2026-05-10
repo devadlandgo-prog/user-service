@@ -31,3 +31,13 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/003_user_type_role_migration.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: user-users-v1-0-0-ddl-professional-fields
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/004_professional_fields.sql
+            relativeToChangelogFile: true

@@ -1,5 +1,6 @@
 package com.landgo.userservice.controller;
 
+import com.landgo.userservice.dto.request.ProfessionalRegisterRequest;
 import com.landgo.userservice.dto.request.UpdateProfileRequest;
 import com.landgo.userservice.dto.response.ApiResponse;
 import com.landgo.userservice.dto.response.PageResponse;
@@ -11,6 +12,7 @@ import com.landgo.userservice.service.AuthService;
 import com.landgo.userservice.service.VendorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -96,12 +98,11 @@ public class ProfessionalController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Register as a professional")
+    @Operation(summary = "Register as a professional (Unified account + profile)")
     public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(
-            @CurrentUser UserPrincipal userPrincipal,
-            @RequestBody com.landgo.userservice.dto.request.VendorProfileRequest request) {
-        log.info("Professional registration request for user: {}", userPrincipal.getId());
-        VendorResponse response = vendorService.createVendorProfile(userPrincipal.getId(), request);
+            @Valid @RequestBody ProfessionalRegisterRequest request) {
+        log.info("Unified professional registration request for email: {}", request.getEmail());
+        VendorResponse response = vendorService.registerProfessional(request);
         return ResponseEntity.ok(ApiResponse.success("Professional registered successfully", response));
     }
 

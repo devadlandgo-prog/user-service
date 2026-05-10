@@ -1,10 +1,15 @@
 package com.landgo.userservice.service;
 
+import com.landgo.userservice.dto.request.ProfessionalRegisterRequest;
 import com.landgo.userservice.dto.request.VendorProfileRequest;
 import com.landgo.userservice.dto.response.VendorResponse;
 import com.landgo.userservice.entity.User;
 import com.landgo.userservice.entity.VendorProfile;
+import com.landgo.userservice.enums.AuthProvider;
+import com.landgo.userservice.enums.Role;
+import com.landgo.userservice.enums.UserType;
 import com.landgo.userservice.exception.BadRequestException;
+import com.landgo.userservice.exception.ConflictException;
 import com.landgo.userservice.exception.ResourceNotFoundException;
 import com.landgo.userservice.mapper.VendorProfileMapper;
 import com.landgo.userservice.repository.UserRepository;
@@ -12,6 +17,7 @@ import com.landgo.userservice.repository.VendorProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +31,52 @@ public class VendorService {
     private final VendorProfileRepository vendorProfileRepository;
     private final UserRepository userRepository;
     private final VendorProfileMapper vendorProfileMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public VendorResponse registerProfessional(ProfessionalRegisterRequest request) {
+        log.info("Starting combined professional registration for email: {}", request.getEmail());
+        
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
+        }
+
+        // 1. Create and Save User
+        String[] parts = request.getFullName().trim().split("\\s+", 2);
+        String firstName = parts[0];
+        String lastName = parts.length > 1 ? parts[1] : "";
+
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .fullName(request.getFullName())
+                .firstName(firstName)
+                .lastName(lastName)
+                .phone(request.getPhone())
+                .role(Role.VENDOR)
+                .userType(UserType.SELLER)
+                .isProfessional(true)
+                .agentAuthorizationAccepted(true)
+                .agencyName(request.getCompanyName())
+                .recoLicenseNumber(request.getLicenseNumber())
+                .authProvider(AuthProvider.EMAIL)
+                .active(true)
+                .build();
+
+        user = userRepository.save(user);
+        log.info("User created with ID: {}", user.getId());
+
+        // 2. Create and Save VendorProfile
+        VendorProfile profile = vendorProfileMapper.toEntity(request);
+        profile.setId(user.getId());
+        profile.setUser(user);
+        
+        VendorProfile saved = vendorProfileRepository.save(profile);
+        log.info("Professional profile created for user: {}", user.getId());
+
+        return vendorProfileMapper.toResponse(saved);
+    }
 
     @Transactional
     public VendorResponse createVendorProfile(@NonNull UUID userId, VendorProfileRequest request) {

@@ -1,5 +1,6 @@
 package com.landgo.userservice.mapper;
 
+import com.landgo.userservice.dto.request.ProfessionalRegisterRequest;
 import com.landgo.userservice.dto.request.VendorProfileRequest;
 import com.landgo.userservice.dto.response.VendorResponse;
 import com.landgo.userservice.entity.VendorProfile;
@@ -17,4 +18,15 @@ public interface VendorProfileMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     VendorProfile toEntity(VendorProfileRequest request);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "companyLogo", source = "profileImageUrl")
+    @Mapping(target = "businessLicense", source = "licenseNumber")
+    @Mapping(target = "businessAddress", constant = "TBD") // These are missing in unified request, can be updated later
+    @Mapping(target = "businessCity", constant = "TBD")
+    @Mapping(target = "businessState", constant = "TBD")
+    @Mapping(target = "businessZipCode", constant = "TBD")
+    @Mapping(target = "businessCountry", constant = "TBD")
+    VendorProfile toEntity(ProfessionalRegisterRequest request);
 }
