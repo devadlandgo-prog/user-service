@@ -19,6 +19,10 @@ import org.springframework.data.domain.Pageable;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
+    
+    @Query("SELECT u FROM User u WHERE u.email = :identifier OR u.phone = :identifier")
+    Optional<User> findByIdentifier(@Param("identifier") String identifier);
+
     Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
     boolean existsByEmail(String email);
     long countByRole(Role role);
