@@ -39,7 +39,8 @@ public class ProfessionalController {
     @GetMapping("/expertise-options")
     @Operation(summary = "Get available expertise options")
     public ResponseEntity<ApiResponse<String[]>> getExpertiseOptions() {
-        String[] options = {"REALTOR", "DEVELOPER", "CONTRACTOR", "BROKER"};
+        String[] options = { "Land Surveying", "Architecture", "Legal Advice", "Civil Engineering",
+                "Environmental Assessment", "Urban Planning", "Real Estate Law", "Property Appraisal" };
         return ResponseEntity.ok(ApiResponse.success(options));
     }
 
