@@ -113,9 +113,9 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        log.info("Attempting login for identifier: {}", request.getIdentifier());
+        log.info("Attempting login for: {}", request.getEmailOrPhone());
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getIdentifier(), request.getPassword()));
+                new UsernamePasswordAuthenticationToken(request.getEmailOrPhone(), request.getPassword()));
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
