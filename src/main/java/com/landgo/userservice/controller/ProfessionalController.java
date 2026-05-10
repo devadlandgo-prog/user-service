@@ -23,6 +23,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
+
+import com.landgo.userservice.service.ExpertiseService;
+import com.landgo.userservice.dto.request.ExpertiseRequest;
+import com.landgo.userservice.entity.Expertise;
 
 @Slf4j
 @RestController
@@ -33,15 +38,44 @@ public class ProfessionalController {
 
     private final VendorService vendorService;
     private final AuthService authService;
+    private final ExpertiseService expertiseService;
 
     // ── Public APIs ──────────────────────────────────────────────────────────
 
     @GetMapping("/expertise-options")
     @Operation(summary = "Get available expertise options")
-    public ResponseEntity<ApiResponse<String[]>> getExpertiseOptions() {
-        String[] options = { "Land Surveying", "Architecture", "Legal Advice", "Civil Engineering",
-                "Environmental Assessment", "Urban Planning", "Real Estate Law", "Property Appraisal" };
+    public ResponseEntity<ApiResponse<List<String>>> getExpertiseOptions() {
+        List<String> options = expertiseService.getAllExpertise(true).stream()
+                .map(Expertise::getName)
+                .toList();
         return ResponseEntity.ok(ApiResponse.success(options));
+    }
+
+    @PostMapping("/expertise-options")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin: Create a new expertise option")
+    public ResponseEntity<ApiResponse<Expertise>> createExpertise(
+            @Valid @RequestBody ExpertiseRequest request) {
+        var expertise = expertiseService.createExpertise(request.getName(), request.getDescription());
+        return ResponseEntity.ok(ApiResponse.success("Expertise created successfully", expertise));
+    }
+
+    @PutMapping("/expertise-options/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin: Update an expertise option")
+    public ResponseEntity<ApiResponse<Expertise>> updateExpertise(
+            @PathVariable UUID id,
+            @Valid @RequestBody ExpertiseRequest request) {
+        var expertise = expertiseService.updateExpertise(id, request.getName(), request.getDescription(), request.getActive());
+        return ResponseEntity.ok(ApiResponse.success("Expertise updated successfully", expertise));
+    }
+
+    @DeleteMapping("/expertise-options/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Admin: Delete an expertise option")
+    public ResponseEntity<ApiResponse<Void>> deleteExpertise(@PathVariable UUID id) {
+        expertiseService.deleteExpertise(id);
+        return ResponseEntity.ok(ApiResponse.success("Expertise deleted successfully", null));
     }
 
     @GetMapping

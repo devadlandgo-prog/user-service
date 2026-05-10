@@ -52,3 +52,14 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/005_user_phone_index.sql
             relativeToChangelogFile: true
+
+  - changeSet:
+      id: user-users-v1-0-0-ddl-expertise-options
+      author: landgo
+      runOnChange: true
+      runAlways: false
+      failOnError: true
+      changes:
+        - sqlFile:
+            path: ../ddl/006_expertise_options.sql
+            relativeToChangelogFile: true
