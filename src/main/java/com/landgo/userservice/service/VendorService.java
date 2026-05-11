@@ -44,6 +44,10 @@ public class VendorService {
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
         }
 
+        if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
+            throw new ConflictException("Phone number already registered", "AUTH_PHONE_EXISTS");
+        }
+
         // 1. Create and Save User
         String[] parts = request.getFullName().trim().split("\\s+", 2);
         String firstName = parts[0];

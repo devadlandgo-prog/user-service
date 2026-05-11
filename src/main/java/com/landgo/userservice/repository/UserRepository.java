@@ -25,6 +25,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByProviderIdAndAuthProvider(String providerId, AuthProvider authProvider);
     boolean existsByEmail(String email);
+    boolean existsByPhone(String phone);
     long countByRole(Role role);
     Page<User> findByIsProfessionalTrue(Pageable pageable);
 

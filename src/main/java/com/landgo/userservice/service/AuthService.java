@@ -72,6 +72,11 @@ public class AuthService {
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");
         }
 
+        if (request.getPhone() != null && userRepository.existsByPhone(request.getPhone())) {
+            log.warn("Registration failed: Phone {} already exists", request.getPhone());
+            throw new ConflictException("Phone number already registered", "AUTH_PHONE_EXISTS");
+        }
+
         Role requestedRole = mapRequestedRole(request.getRole());
         boolean isProfessional = isProfessionalRole(request.getRole());
 
