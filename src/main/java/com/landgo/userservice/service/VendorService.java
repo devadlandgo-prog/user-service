@@ -135,7 +135,7 @@ public class VendorService {
 
     @Transactional(readOnly = true)
     public Map<UUID, VendorResponse> getVendorProfilesBatch(List<UUID> userIds) {
-        return vendorProfileRepository.findAllByUserIdIn(userIds).stream()
+        return vendorProfileRepository.findAllByIdIn(userIds).stream()
                 .collect(Collectors.toMap(
                         vp -> vp.getUser().getId(),
                         vendorProfileMapper::toResponse
