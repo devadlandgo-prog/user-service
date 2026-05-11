@@ -21,7 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -128,6 +131,15 @@ public class VendorService {
         VendorProfile updated = vendorProfileRepository.save(profile);
         log.info("Vendor profile updated for user: {}", userId);
         return vendorProfileMapper.toResponse(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, VendorResponse> getVendorProfilesBatch(List<UUID> userIds) {
+        return vendorProfileRepository.findAllByUserIdIn(userIds).stream()
+                .collect(Collectors.toMap(
+                        vp -> vp.getUser().getId(),
+                        vendorProfileMapper::toResponse
+                ));
     }
 
     @Transactional(readOnly = true)

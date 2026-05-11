@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
 
 /**
  * Internal API — called by payment-service and core-service via REST.
@@ -47,6 +48,11 @@ public class InternalUserController {
     @GetMapping("/{userId}/vendor")
     public ResponseEntity<VendorResponse> getVendorProfile(@PathVariable UUID userId) {
         return ResponseEntity.ok(vendorService.getVendorProfile(userId));
+    }
+
+    @GetMapping("/vendors/batch")
+    public ResponseEntity<java.util.Map<UUID, VendorResponse>> getVendorProfilesBatch(@RequestParam List<UUID> userIds) {
+        return ResponseEntity.ok(vendorService.getVendorProfilesBatch(userIds));
     }
 
     @PostMapping("/{userId}/vendor")

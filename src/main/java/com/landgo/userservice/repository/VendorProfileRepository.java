@@ -11,4 +11,6 @@ import java.util.UUID;
 @Repository
 public interface VendorProfileRepository extends JpaRepository<VendorProfile, UUID> {
     Optional<VendorProfile> findByUser(User user);
+    Optional<VendorProfile> findByUserId(UUID userId);
+    java.util.List<VendorProfile> findAllByUserIdIn(java.util.Collection<UUID> userIds);
 }
