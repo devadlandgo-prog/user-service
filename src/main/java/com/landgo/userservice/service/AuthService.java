@@ -17,6 +17,7 @@ import com.landgo.userservice.mapper.UserMapper;
 import com.landgo.userservice.repository.EmailVerificationTokenRepository;
 import com.landgo.userservice.repository.PasswordResetTokenRepository;
 import com.landgo.userservice.repository.UserRepository;
+import com.landgo.userservice.repository.VendorProfileRepository;
 import com.landgo.userservice.security.JwtTokenProvider;
 import com.landgo.userservice.security.UserPrincipal;
 import com.landgo.userservice.strategy.OAuth2AuthenticationStrategy;
@@ -53,7 +54,7 @@ public class AuthService {
     private final EmailService emailService;
     private final MfaService mfaService;
     private final LoginAuditService loginAuditService;
-    private final com.landgo.userservice.repository.VendorProfileRepository vendorProfileRepository;
+    private final VendorProfileRepository vendorProfileRepository;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -598,7 +599,7 @@ public class AuthService {
 
         // Update VendorProfile entity if it exists
         if (user.isProfessional()) {
-            vendorProfileRepository.findByUserId(userId).ifPresent(profile -> {
+            vendorProfileRepository.findById(userId).ifPresent(profile -> {
                 if (request.getCompanyName() != null) profile.setCompanyName(request.getCompanyName());
                 if (request.getLicenseNumber() != null) profile.setBusinessLicense(request.getLicenseNumber());
                 if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
