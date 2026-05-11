@@ -162,6 +162,14 @@ public class ProfessionalController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    @GetMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get a professional's profile details (admin)")
+    public ResponseEntity<ApiResponse<VendorResponse>> getProfessionalByIdForAdmin(@PathVariable UUID id) {
+        VendorResponse vendor = vendorService.getVendorProfile(id);
+        return ResponseEntity.ok(ApiResponse.success(vendor));
+    }
+
     @PutMapping("/admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a professional's profile (admin)")

@@ -53,6 +53,7 @@ public class AuthService {
     private final EmailService emailService;
     private final MfaService mfaService;
     private final LoginAuditService loginAuditService;
+    private final com.landgo.userservice.repository.VendorProfileRepository vendorProfileRepository;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -573,6 +574,8 @@ public class AuthService {
     public UserResponse updateProfessionalProfile(UUID userId, UpdateProfileRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        
+        // Update User Entity fields
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             user.setFullName(request.getFullName());
             String[] parts = request.getFullName().trim().split("\\s+", 2);
@@ -584,7 +587,39 @@ public class AuthService {
         if (request.getLocation() != null) user.setLocation(request.getLocation().isBlank() ? null : request.getLocation());
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
+        
+        // Sync redundant fields on User entity if it's a professional
+        if (user.isProfessional()) {
+            if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
+            if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
+        }
+
         user = userRepository.save(user);
+
+        // Update VendorProfile entity if it exists
+        if (user.isProfessional()) {
+            vendorProfileRepository.findByUserId(userId).ifPresent(profile -> {
+                if (request.getCompanyName() != null) profile.setCompanyName(request.getCompanyName());
+                if (request.getLicenseNumber() != null) profile.setBusinessLicense(request.getLicenseNumber());
+                if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
+                if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
+                if (request.getServiceArea() != null) profile.setServiceArea(request.getServiceArea());
+                if (request.getCertifications() != null) profile.setCertifications(request.getCertifications());
+                if (request.getBio() != null) profile.setBio(request.getBio());
+                if (request.getCompanyDescription() != null) profile.setCompanyDescription(request.getCompanyDescription());
+                
+                // Address fields
+                if (request.getBusinessAddress() != null) profile.setBusinessAddress(request.getBusinessAddress());
+                if (request.getBusinessCity() != null) profile.setBusinessCity(request.getBusinessCity());
+                if (request.getBusinessState() != null) profile.setBusinessState(request.getBusinessState());
+                if (request.getBusinessZipCode() != null) profile.setBusinessZipCode(request.getBusinessZipCode());
+                if (request.getBusinessCountry() != null) profile.setBusinessCountry(request.getBusinessCountry());
+                if (request.getWebsite() != null) profile.setWebsite(request.getWebsite());
+                
+                vendorProfileRepository.save(profile);
+            });
+        }
+
         log.info("Admin updated professional profile for user: {}", userId);
         return userMapper.toResponse(user);
     }

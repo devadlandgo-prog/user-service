@@ -11,4 +11,22 @@ public class UpdateProfileRequest {
     @Size(max = 200) private String location;
     @Size(max = 2000) private String professionalBio;
     @Size(max = 50) private String timezone;
+
+    // Professional/Vendor fields
+    @Size(max = 150) private String companyName;
+    @Size(max = 50) private String licenseNumber;
+    private java.util.List<String> specialization;
+    private Integer yearsOfExperience;
+    private java.util.List<String> serviceArea;
+    private java.util.List<String> certifications;
+    @Size(max = 1000) private String bio; // mapped to VendorProfile.bio
+    @Size(max = 2000) private String companyDescription;
+    
+    // Additional address fields
+    private String businessAddress;
+    private String businessCity;
+    private String businessState;
+    private String businessZipCode;
+    private String businessCountry;
+    private String website;
 }
