@@ -187,4 +187,15 @@ public class ProfessionalController {
         authService.deactivateProfessional(id);
         return ResponseEntity.ok(ApiResponse.success("Professional deactivated successfully", null));
     }
+    
+    @PatchMapping("/admin/{id}/verify")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Verify/Approve a professional (admin)")
+    public ResponseEntity<ApiResponse<VendorResponse>> verifyProfessional(
+            @PathVariable UUID id,
+            @RequestParam com.landgo.userservice.enums.VerificationStatus status,
+            @RequestParam(required = false) String notes) {
+        VendorResponse response = vendorService.verifyProfessional(id, status, notes);
+        return ResponseEntity.ok(ApiResponse.success("Professional verification updated", response));
+    }
 }

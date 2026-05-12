@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260512-insert-mock-professionals
+      author: antigravity
+      context: dev
+      changes:
+        - sqlFile:
+            path: ../ddl/002_mock_data.sql
+            relativeToChangelogFile: true

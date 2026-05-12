@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260512-add-verification-fields-to-vendor-profiles
+      author: antigravity
+      changes:
+        - sqlFile:
+            path: ../ddl/001_add_verification_fields.sql
+            relativeToChangelogFile: true

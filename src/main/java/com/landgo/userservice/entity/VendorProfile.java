@@ -77,6 +77,14 @@ public class VendorProfile extends BaseEntity {
     @Builder.Default
     private boolean verified = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", length = 20)
+    @Builder.Default
+    private com.landgo.userservice.enums.VerificationStatus verificationStatus = com.landgo.userservice.enums.VerificationStatus.PENDING;
+
+    @Column(name = "verification_notes", length = 500)
+    private String verificationNotes;
+
     @Column(name = "rating", precision = 3, scale = 2)
     private BigDecimal rating;
 

@@ -20,6 +20,8 @@ public class VendorResponse {
     private String businessCountry;
     private String website;
     private boolean verified;
+    private com.landgo.userservice.enums.VerificationStatus verificationStatus;
+    private String verificationNotes;
     private BigDecimal rating;
     private Integer totalReviews;
     private Integer totalListings;

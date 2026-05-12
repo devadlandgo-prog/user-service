@@ -146,10 +146,31 @@ public class VendorService {
                 ));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public VendorResponse getVendorProfileById(@NonNull UUID vendorId) {
         VendorProfile profile = vendorProfileRepository.findById(vendorId)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", vendorId));
         return vendorProfileMapper.toResponse(profile);
+    }
+
+    @Transactional
+    public VendorResponse verifyProfessional(UUID userId, com.landgo.userservice.enums.VerificationStatus status, String notes) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        VendorProfile profile = vendorProfileRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "userId", userId));
+
+        profile.setVerificationStatus(status);
+        profile.setVerificationNotes(notes);
+        
+        if (status == com.landgo.userservice.enums.VerificationStatus.APPROVED) {
+            profile.setVerified(true);
+        } else {
+            profile.setVerified(false);
+        }
+
+        VendorProfile saved = vendorProfileRepository.save(profile);
+        log.info("Professional verification updated for user: {} to {}", userId, status);
+        return vendorProfileMapper.toResponse(saved);
     }
 }
