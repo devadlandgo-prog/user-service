@@ -15,11 +15,18 @@ public interface VendorProfileRepository extends JpaRepository<VendorProfile, UU
     
     org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrue(org.springframework.data.domain.Pageable pageable);
 
-    @org.springframework.data.jpa.repository.Query("SELECT vp FROM VendorProfile vp JOIN vp.user u WHERE vp.verified = true AND (" +
-           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
-           "LOWER(vp.companyName) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM vendor_profiles vp JOIN users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
            "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
-           "LOWER(vp.businessCity) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
-           "EXISTS (SELECT s FROM vp.specialization s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))")
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           countQuery = "SELECT count(*) FROM vendor_profiles vp JOIN users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           nativeQuery = true)
     org.springframework.data.domain.Page<VendorProfile> searchProfessionals(@org.springframework.data.repository.query.Param("q") String query, org.springframework.data.domain.Pageable pageable);
 }
