@@ -31,4 +31,5 @@ public class VendorProfileRequest {
     private String businessCountry;
 
     private String website;
+    private String phoneNumber;
 }

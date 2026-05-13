@@ -131,6 +131,7 @@ public class VendorService {
         profile.setBusinessZipCode(request.getBusinessZipCode());
         profile.setBusinessCountry(request.getBusinessCountry());
         profile.setWebsite(request.getWebsite());
+        profile.setPhoneNumber(request.getPhoneNumber());
 
         VendorProfile updated = vendorProfileRepository.save(profile);
         log.info("Vendor profile updated for user: {}", userId);
@@ -172,5 +173,17 @@ public class VendorService {
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional verification updated for user: {} to {}", userId, status);
         return vendorProfileMapper.toResponse(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<VendorResponse> getVerifiedProfessionals(org.springframework.data.domain.Pageable pageable) {
+        return vendorProfileRepository.findByVerifiedTrue(pageable)
+                .map(vendorProfileMapper::toResponse);
+    }
+    
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<VendorResponse> searchProfessionals(String q, org.springframework.data.domain.Pageable pageable) {
+        return vendorProfileRepository.searchProfessionals(q, pageable)
+                .map(vendorProfileMapper::toResponse);
     }
 }

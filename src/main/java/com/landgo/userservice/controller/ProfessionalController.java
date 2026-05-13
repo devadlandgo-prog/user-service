@@ -80,12 +80,24 @@ public class ProfessionalController {
 
     @GetMapping
     @Operation(summary = "List verified professionals")
-    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getVerifiedProfessionals(
+    public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> getVerifiedProfessionals(
+            @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<UserResponse> professionals = authService.getAllProfessionals(
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        PageResponse<UserResponse> response = PageResponse.<UserResponse>builder()
+        
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (sortBy != null) {
+            sort = switch (sortBy.toLowerCase()) {
+                case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
+                case "most_reviews" -> Sort.by(Sort.Direction.DESC, "totalReviews");
+                case "most_experience" -> Sort.by(Sort.Direction.DESC, "yearsOfExperience");
+                default -> sort;
+            };
+        }
+
+        Page<VendorResponse> professionals = vendorService.getVerifiedProfessionals(
+                PageRequest.of(page, size, sort));
+        PageResponse<VendorResponse> response = PageResponse.<VendorResponse>builder()
                 .content(professionals.getContent())
                 .number(professionals.getNumber())
                 .size(professionals.getSize())
@@ -99,13 +111,25 @@ public class ProfessionalController {
 
     @GetMapping("/search")
     @Operation(summary = "Search professionals")
-    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> searchProfessionals(
+    public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> searchProfessionals(
             @RequestParam String q,
+            @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<UserResponse> professionals = authService.searchProfessionals(q,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        PageResponse<UserResponse> response = PageResponse.<UserResponse>builder()
+        
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (sortBy != null) {
+            sort = switch (sortBy.toLowerCase()) {
+                case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
+                case "most_reviews" -> Sort.by(Sort.Direction.DESC, "totalReviews");
+                case "most_experience" -> Sort.by(Sort.Direction.DESC, "yearsOfExperience");
+                default -> sort;
+            };
+        }
+
+        Page<VendorResponse> professionals = vendorService.searchProfessionals(q,
+                PageRequest.of(page, size, sort));
+        PageResponse<VendorResponse> response = PageResponse.<VendorResponse>builder()
                 .content(professionals.getContent())
                 .number(professionals.getNumber())
                 .size(professionals.getSize())

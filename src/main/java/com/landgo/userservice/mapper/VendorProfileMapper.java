@@ -21,6 +21,7 @@ public interface VendorProfileMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "phoneNumber", source = "phone")
     @Mapping(target = "companyLogo", source = "profileImageUrl")
     @Mapping(target = "businessLicense", source = "licenseNumber")
     @Mapping(target = "businessAddress", constant = "TBD") // These are missing in unified request, can be updated later
