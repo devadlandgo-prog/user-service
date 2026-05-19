@@ -12,3 +12,11 @@ databaseChangeLog:
                   defaultValue: 0
                   constraints:
                     nullable: false
+
+  - changeSet:
+      id: migrate-certifications-to-jsonb
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/002_migrate_certifications_to_jsonb.sql
+            relativeToChangelogFile: true
