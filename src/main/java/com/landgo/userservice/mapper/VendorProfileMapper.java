@@ -20,6 +20,21 @@ public interface VendorProfileMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "specialization", ignore = true)
+    @Mapping(target = "yearsOfExperience", ignore = true)
+    @Mapping(target = "serviceArea", ignore = true)
+    @Mapping(target = "bio", ignore = true)
+    @Mapping(target = "verified", ignore = true)
+    @Mapping(target = "verificationStatus", ignore = true)
+    @Mapping(target = "verificationNotes", ignore = true)
+    @Mapping(target = "rating", ignore = true)
+    @Mapping(target = "totalReviews", ignore = true)
+    @Mapping(target = "totalListings", ignore = true)
+    @Mapping(target = "totalSold", ignore = true)
+    @Mapping(target = "viewCount", ignore = true)
     VendorProfile toEntity(VendorProfileRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -34,6 +49,21 @@ public interface VendorProfileMapper {
     @Mapping(target = "businessState", constant = "TBD")
     @Mapping(target = "businessZipCode", constant = "TBD")
     @Mapping(target = "businessCountry", constant = "TBD")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "specialization", ignore = true)
+    @Mapping(target = "yearsOfExperience", ignore = true)
+    @Mapping(target = "serviceArea", ignore = true)
+    @Mapping(target = "bio", ignore = true)
+    @Mapping(target = "verified", ignore = true)
+    @Mapping(target = "verificationStatus", ignore = true)
+    @Mapping(target = "verificationNotes", ignore = true)
+    @Mapping(target = "rating", ignore = true)
+    @Mapping(target = "totalReviews", ignore = true)
+    @Mapping(target = "totalListings", ignore = true)
+    @Mapping(target = "totalSold", ignore = true)
+    @Mapping(target = "viewCount", ignore = true)
     VendorProfile toEntity(ProfessionalRegisterRequest request);
 
     VendorCertification toEntity(CertificationRequest request);

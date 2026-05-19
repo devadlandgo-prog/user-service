@@ -1,19 +1,18 @@
 package com.landgo.userservice.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ProfessionalRegisterRequest {
-    // Account details
+    // Account details (optional for authenticated users, validated in service layer)
     @Size(max = 100)
     private String fullName;
 
-    @Email
     private String email;
 
-    @Size(min = 8)
     private String password;
 
     private String phone;
@@ -43,7 +42,8 @@ public class ProfessionalRegisterRequest {
     @Size(max = 1000)
     private String bio;
 
-    private List<String> certifications;
+    @Valid
+    private List<CertificationRequest> certifications;
 
     @Size(max = 2000)
     private String companyDescription;

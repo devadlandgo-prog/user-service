@@ -25,5 +25,14 @@ public interface UserMapper {
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "professionalBio", ignore = true)
     @Mapping(target = "recoLicenseNumber", source = "licenseNumber")
+    @Mapping(target = "userType", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "emailVerifiedAt", ignore = true)
+    @Mapping(target = "mfaEnabled", ignore = true)
+    @Mapping(target = "mfaVerified", ignore = true)
+    @Mapping(target = "timezone", ignore = true)
+    @Mapping(target = "lastLoginAt", ignore = true)
+    @Mapping(target = "isProfessional", ignore = true)
     User toEntity(RegisterRequest request);
 }

@@ -12,7 +12,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.landgo.userservice.oauth.GoogleTokenVerifier;
@@ -23,7 +23,7 @@ import com.landgo.userservice.service.SecretsManagerService;
 @EnableConfigurationProperties(GoogleOAuthProperties.class)
 public class GoogleOAuthConfig {
 
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+    private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     @Bean
     public GoogleTokenVerifier googleTokenVerifier(GoogleOAuthProperties properties,
