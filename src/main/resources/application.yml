@@ -50,6 +50,11 @@ app:
   oauth2:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}
+      web-client-id: ${GOOGLE_CLIENT_ID_WEB:}
+      android-client-id: ${GOOGLE_CLIENT_ID_ANDROID:}
+      ios-client-id: ${GOOGLE_CLIENT_ID_IOS:}
+      additional-audiences: ${GOOGLE_CLIENT_ADDITIONAL_AUDIENCES:}
+      secret-name: ${GOOGLE_OAUTH_SECRET_NAME:}
     apple:
       client-id: ${APPLE_CLIENT_ID:}
   liquibase:

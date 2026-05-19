@@ -148,6 +148,11 @@ public class AuthService {
 
     @Transactional
     public AuthResponse oauth2Login(OAuth2Request request) {
+        if (request.getPlatform() != null && !request.getPlatform().isBlank()) {
+            log.info("OAuth2 login requested via {} from platform {}", request.getAuthProvider(), request.getPlatform());
+        } else {
+            log.info("OAuth2 login requested via {}", request.getAuthProvider());
+        }
         OAuth2AuthenticationStrategy strategy = oAuth2StrategyFactory.getStrategy(request.getAuthProvider());
         OAuth2UserInfo userInfo = strategy.extractUserInfo(request.getToken());
 
@@ -292,7 +297,36 @@ public class AuthService {
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
 
+        if (user.isProfessional()) {
+            if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
+            if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
+        }
+
         user = userRepository.save(user);
+
+        if (user.isProfessional()) {
+            vendorProfileRepository.findByUser(user).ifPresent(profile -> {
+                if (request.getCompanyName() != null) profile.setCompanyName(request.getCompanyName());
+                if (request.getLicenseNumber() != null) profile.setBusinessLicense(request.getLicenseNumber());
+                if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
+                if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
+                if (request.getServiceArea() != null) profile.setServiceArea(request.getServiceArea());
+                if (request.getCertifications() != null) profile.setCertifications(request.getCertifications());
+                if (request.getBio() != null) profile.setBio(request.getBio());
+                if (request.getCompanyDescription() != null) profile.setCompanyDescription(request.getCompanyDescription());
+                if (request.getBusinessAddress() != null) profile.setBusinessAddress(request.getBusinessAddress());
+                if (request.getBusinessCity() != null) profile.setBusinessCity(request.getBusinessCity());
+                if (request.getBusinessState() != null) profile.setBusinessState(request.getBusinessState());
+                if (request.getBusinessZipCode() != null) profile.setBusinessZipCode(request.getBusinessZipCode());
+                if (request.getBusinessCountry() != null) profile.setBusinessCountry(request.getBusinessCountry());
+                if (request.getWebsite() != null) profile.setWebsite(request.getWebsite());
+                if (request.getPhone() != null) profile.setPhoneNumber(request.getPhone().isBlank() ? null : request.getPhone());
+                if (request.getProfileImageUrl() != null)
+                    profile.setCompanyLogo(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl());
+                vendorProfileRepository.save(profile);
+            });
+        }
+
         log.info("Profile updated for user: {}", user.getEmail());
         return userMapper.toResponse(user);
     }

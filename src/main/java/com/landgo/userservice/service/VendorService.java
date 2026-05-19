@@ -14,12 +14,14 @@ import com.landgo.userservice.exception.ResourceNotFoundException;
 import com.landgo.userservice.mapper.VendorProfileMapper;
 import com.landgo.userservice.repository.UserRepository;
 import com.landgo.userservice.repository.VendorProfileRepository;
+import com.landgo.userservice.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -37,8 +39,53 @@ public class VendorService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public VendorResponse registerProfessional(ProfessionalRegisterRequest request) {
+    public VendorResponse registerProfessional(ProfessionalRegisterRequest request, UserPrincipal userPrincipal) {
         log.info("Starting combined professional registration for email: {}", request.getEmail());
+
+        if (userPrincipal != null) {
+            User user = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User", "id", userPrincipal.getId()));
+
+            if (StringUtils.hasText(request.getEmail()) && !request.getEmail().equalsIgnoreCase(user.getEmail())) {
+                throw new BadRequestException("Email does not match authenticated user", "VALIDATION_ERROR");
+            }
+
+            if (vendorProfileRepository.findByUser(user).isPresent()) {
+                throw new BadRequestException("Vendor profile already exists for this user", "PROFESSIONAL_PROFILE_EXISTS");
+            }
+
+            VendorProfile profile = vendorProfileMapper.toEntity(request);
+            profile.setId(user.getId());
+            profile.setUser(user);
+            if (!StringUtils.hasText(profile.getPhoneNumber())) {
+                profile.setPhoneNumber(user.getPhone());
+            }
+
+            user.setRole(Role.VENDOR);
+            user.setUserType(UserType.SELLER);
+            user.setProfessional(true);
+            user.setAgentAuthorizationAccepted(true);
+            user.setAgencyName(request.getCompanyName());
+            user.setRecoLicenseNumber(request.getLicenseNumber());
+            userRepository.save(user);
+
+            VendorProfile saved = vendorProfileRepository.save(profile);
+            log.info("Professional profile created for existing user: {}", user.getId());
+            return vendorProfileMapper.toResponse(saved);
+        }
+
+        if (!StringUtils.hasText(request.getEmail())) {
+            throw new BadRequestException("Email is required", "VALIDATION_ERROR");
+        }
+        if (!StringUtils.hasText(request.getFullName())) {
+            throw new BadRequestException("Full name is required", "VALIDATION_ERROR");
+        }
+        if (!StringUtils.hasText(request.getPassword())) {
+            throw new BadRequestException("Password is required", "VALIDATION_ERROR");
+        }
+        if (!StringUtils.hasText(request.getPhone())) {
+            throw new BadRequestException("Phone is required", "VALIDATION_ERROR");
+        }
         
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ConflictException("Email already registered", "AUTH_EMAIL_EXISTS");

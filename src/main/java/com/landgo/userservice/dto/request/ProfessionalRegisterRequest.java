@@ -7,19 +7,15 @@ import java.util.List;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ProfessionalRegisterRequest {
     // Account details
-    @NotBlank(message = "Full name is required")
     @Size(max = 100)
     private String fullName;
 
-    @NotBlank(message = "Email is required")
     @Email
     private String email;
 
-    @NotBlank(message = "Password is required")
     @Size(min = 8)
     private String password;
 
-    @NotBlank(message = "Phone is required")
     private String phone;
 
     // Professional profile details
@@ -48,4 +44,10 @@ public class ProfessionalRegisterRequest {
     private String bio;
 
     private List<String> certifications;
+
+    @Size(max = 2000)
+    private String companyDescription;
+
+    @Size(max = 500)
+    private String website;
 }

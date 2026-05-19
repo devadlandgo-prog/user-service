@@ -156,11 +156,12 @@ public class ProfessionalController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Register as a professional (Unified account + profile)")
+    @Operation(summary = "Register as a professional (public unified signup or authenticated profile create)")
     public ResponseEntity<ApiResponse<VendorResponse>> registerProfessional(
-            @Valid @RequestBody ProfessionalRegisterRequest request) {
+            @Valid @RequestBody ProfessionalRegisterRequest request,
+            @CurrentUser UserPrincipal userPrincipal) {
         log.info("Unified professional registration request for email: {}", request.getEmail());
-        VendorResponse response = vendorService.registerProfessional(request);
+        VendorResponse response = vendorService.registerProfessional(request, userPrincipal);
         return ResponseEntity.ok(ApiResponse.success("Professional registered successfully", response));
     }
 

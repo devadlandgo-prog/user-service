@@ -8,4 +8,5 @@ import lombok.*;
 public class OAuth2Request {
     @NotBlank private String token;
     @NotNull private AuthProvider authProvider;
+    private String platform;
 }
