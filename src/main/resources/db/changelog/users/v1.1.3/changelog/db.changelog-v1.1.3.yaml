@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-view-count-to-vendor-profiles
+      author: backend-team
+      changes:
+        - addColumn:
+            tableName: vendor_profiles
+            columns:
+              - column:
+                  name: view_count
+                  type: integer
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
