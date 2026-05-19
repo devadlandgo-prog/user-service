@@ -1,8 +1,11 @@
 package com.landgo.userservice.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class VendorProfileRequest {
@@ -32,4 +35,7 @@ public class VendorProfileRequest {
 
     private String website;
     private String phoneNumber;
+
+    @Valid
+    private List<CertificationRequest> certifications;
 }

@@ -2,6 +2,7 @@ package com.landgo.userservice.dto.request;
 
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import jakarta.validation.Valid;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class UpdateProfileRequest {
@@ -18,7 +19,8 @@ public class UpdateProfileRequest {
     private java.util.List<String> specialization;
     private Integer yearsOfExperience;
     private java.util.List<String> serviceArea;
-    private java.util.List<String> certifications;
+    @Valid
+    private java.util.List<CertificationRequest> certifications;
     @Size(max = 1000) private String bio; // mapped to VendorProfile.bio
     @Size(max = 2000) private String companyDescription;
     

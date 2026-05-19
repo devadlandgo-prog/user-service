@@ -7,12 +7,14 @@ import java.util.List;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ProfessionalRegisterRequest {
-    // Account details (optional for authenticated users, validated in service layer)
+    // Account details
     @Size(max = 100)
     private String fullName;
 
+    @Email
     private String email;
 
+    @Size(min = 8)
     private String password;
 
     private String phone;

@@ -6,6 +6,7 @@ import com.landgo.userservice.dto.response.UserResponse;
 import com.landgo.userservice.entity.EmailVerificationToken;
 import com.landgo.userservice.entity.PasswordResetToken;
 import com.landgo.userservice.entity.User;
+import com.landgo.userservice.entity.VendorCertification;
 import com.landgo.userservice.enums.AuthProvider;
 import com.landgo.userservice.enums.Role;
 import com.landgo.userservice.enums.UserType;
@@ -33,7 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -311,7 +314,7 @@ public class AuthService {
                 if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
                 if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
                 if (request.getServiceArea() != null) profile.setServiceArea(request.getServiceArea());
-                if (request.getCertifications() != null) profile.setCertifications(request.getCertifications());
+                if (request.getCertifications() != null) profile.setCertifications(mapCertifications(request.getCertifications()));
                 if (request.getBio() != null) profile.setBio(request.getBio());
                 if (request.getCompanyDescription() != null) profile.setCompanyDescription(request.getCompanyDescription());
                 if (request.getBusinessAddress() != null) profile.setBusinessAddress(request.getBusinessAddress());
@@ -644,7 +647,7 @@ public class AuthService {
                 if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
                 if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
                 if (request.getServiceArea() != null) profile.setServiceArea(request.getServiceArea());
-                if (request.getCertifications() != null) profile.setCertifications(request.getCertifications());
+                if (request.getCertifications() != null) profile.setCertifications(mapCertifications(request.getCertifications()));
                 if (request.getBio() != null) profile.setBio(request.getBio());
                 if (request.getCompanyDescription() != null) profile.setCompanyDescription(request.getCompanyDescription());
                 
@@ -680,5 +683,14 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         userRepository.delete(user);
         log.info("Admin performed hard delete of user: {}", userId);
+    }
+
+    private List<VendorCertification> mapCertifications(List<CertificationRequest> certifications) {
+        return certifications.stream()
+                .map(certification -> VendorCertification.builder()
+                        .title(certification.getTitle())
+                        .fileKey(certification.getFileKey())
+                        .build())
+                .collect(Collectors.toList());
     }
 }
