@@ -26,11 +26,12 @@ public class VendorResponse {
     private Integer totalReviews;
     private Integer totalListings;
     private Integer totalSold;
+    private Integer viewCount;
     private java.util.List<String> specialization;
     private Integer yearsOfExperience;
     private java.util.List<String> serviceArea;
     private String bio;
-    private java.util.List<String> certifications;
+    private java.util.List<CertificationResponse> certifications;
     private String phoneNumber;
 
     private String ownerName;

@@ -6,6 +6,7 @@ import lombok.experimental.SuperBuilder;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -66,9 +67,9 @@ public class VendorProfile extends BaseEntity {
     @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "certifications", columnDefinition = "text[]")
-    private List<String> certifications;
+    @Column(name = "certifications", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private List<VendorCertification> certifications;
 
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
@@ -99,4 +100,8 @@ public class VendorProfile extends BaseEntity {
     @Column(name = "total_sold")
     @Builder.Default
     private Integer totalSold = 0;
+
+    @Column(name = "view_count")
+    @Builder.Default
+    private Integer viewCount = 0;
 }

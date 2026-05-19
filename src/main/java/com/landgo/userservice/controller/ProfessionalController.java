@@ -223,4 +223,11 @@ public class ProfessionalController {
         VendorResponse response = vendorService.verifyProfessional(id, status, notes);
         return ResponseEntity.ok(ApiResponse.success("Professional verification updated", response));
     }
+
+    @PostMapping("/{id}/view")
+    @Operation(summary = "Increment profile view count")
+    public ResponseEntity<ApiResponse<Void>> incrementProfileView(@PathVariable UUID id) {
+        vendorService.incrementViewCount(id);
+        return ResponseEntity.ok(ApiResponse.success("Profile view count incremented", null));
+    }
 }

@@ -8,3 +8,9 @@ databaseChangeLog:
   - includeAll:
       path: db/changelog/users/v1.1.1/changelog
       relativeToChangelogFile: false
+  - includeAll:
+      path: db/changelog/users/v1.1.2/changelog
+      relativeToChangelogFile: false
+  - includeAll:
+      path: db/changelog/users/v1.1.3/changelog
+      relativeToChangelogFile: false

@@ -1,8 +1,11 @@
 package com.landgo.userservice.mapper;
 
 import com.landgo.userservice.dto.request.ProfessionalRegisterRequest;
+import com.landgo.userservice.dto.request.CertificationRequest;
 import com.landgo.userservice.dto.request.VendorProfileRequest;
+import com.landgo.userservice.dto.response.CertificationResponse;
 import com.landgo.userservice.dto.response.VendorResponse;
+import com.landgo.userservice.entity.VendorCertification;
 import com.landgo.userservice.entity.VendorProfile;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,6 +16,7 @@ public interface VendorProfileMapper {
     @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "ownerName", source = "user.fullName")
     @Mapping(target = "ownerEmail", source = "user.email")
+    @Mapping(target = "viewCount", source = "viewCount")
     VendorResponse toResponse(VendorProfile vendor);
 
     @Mapping(target = "id", ignore = true)
@@ -32,4 +36,8 @@ public interface VendorProfileMapper {
     @Mapping(target = "businessZipCode", constant = "TBD")
     @Mapping(target = "businessCountry", constant = "TBD")
     VendorProfile toEntity(ProfessionalRegisterRequest request);
+
+    VendorCertification toEntity(CertificationRequest request);
+
+    CertificationResponse toResponse(VendorCertification certification);
 }

@@ -1,9 +1,11 @@
 package com.landgo.userservice.service;
 
 import com.landgo.userservice.dto.request.ProfessionalRegisterRequest;
+import com.landgo.userservice.dto.request.CertificationRequest;
 import com.landgo.userservice.dto.request.VendorProfileRequest;
 import com.landgo.userservice.dto.response.VendorResponse;
 import com.landgo.userservice.entity.User;
+import com.landgo.userservice.entity.VendorCertification;
 import com.landgo.userservice.entity.VendorProfile;
 import com.landgo.userservice.enums.AuthProvider;
 import com.landgo.userservice.enums.Role;
@@ -37,6 +39,12 @@ public class VendorService {
     private final UserRepository userRepository;
     private final VendorProfileMapper vendorProfileMapper;
     private final PasswordEncoder passwordEncoder;
+
+    @Transactional
+    public void incrementViewCount(UUID profileId) {
+        vendorProfileRepository.incrementViewCount(profileId);
+        log.debug("Incremented view count for profile: {}", profileId);
+    }
 
     @Transactional
     public VendorResponse registerProfessional(ProfessionalRegisterRequest request, UserPrincipal userPrincipal) {
@@ -179,6 +187,9 @@ public class VendorService {
         profile.setBusinessCountry(request.getBusinessCountry());
         profile.setWebsite(request.getWebsite());
         profile.setPhoneNumber(request.getPhoneNumber());
+        if (request.getCertifications() != null) {
+            profile.setCertifications(mapCertifications(request.getCertifications()));
+        }
 
         VendorProfile updated = vendorProfileRepository.save(profile);
         log.info("Vendor profile updated for user: {}", userId);
@@ -232,5 +243,14 @@ public class VendorService {
     public org.springframework.data.domain.Page<VendorResponse> searchProfessionals(String q, org.springframework.data.domain.Pageable pageable) {
         return vendorProfileRepository.searchProfessionals(q, pageable)
                 .map(vendorProfileMapper::toResponse);
+    }
+
+    private List<VendorCertification> mapCertifications(List<CertificationRequest> certifications) {
+        return certifications.stream()
+                .map(certification -> VendorCertification.builder()
+                        .title(certification.getTitle())
+                        .fileKey(certification.getFileKey())
+                        .build())
+                .toList();
     }
 }
