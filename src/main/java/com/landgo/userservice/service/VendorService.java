@@ -234,8 +234,12 @@ public class VendorService {
     }
 
     @Transactional(readOnly = true)
-    public org.springframework.data.domain.Page<VendorResponse> getVerifiedProfessionals(org.springframework.data.domain.Pageable pageable) {
-        return vendorProfileRepository.findByVerifiedTrue(pageable)
+    public org.springframework.data.domain.Page<VendorResponse> getVerifiedProfessionals(String specialization, org.springframework.data.domain.Pageable pageable) {
+        if (specialization == null || specialization.isBlank()) {
+            return vendorProfileRepository.findByVerifiedTrue(pageable)
+                    .map(vendorProfileMapper::toResponse);
+        }
+        return vendorProfileRepository.findByVerifiedTrueAndSpecialization(specialization, pageable)
                 .map(vendorProfileMapper::toResponse);
     }
     

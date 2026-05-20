@@ -81,22 +81,24 @@ public class ProfessionalController {
     @GetMapping
     @Operation(summary = "List verified professionals")
     public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> getVerifiedProfessionals(
+            @RequestParam(required = false) String specialization,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
+
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
                 case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
                 case "most_reviews" -> Sort.by(Sort.Direction.DESC, "totalReviews");
                 case "most_experience" -> Sort.by(Sort.Direction.DESC, "yearsOfExperience");
+                case "newest" -> Sort.by(Sort.Direction.DESC, "createdAt");
                 default -> sort;
             };
         }
 
         Page<VendorResponse> professionals = vendorService.getVerifiedProfessionals(
-                PageRequest.of(page, size, sort));
+                specialization, PageRequest.of(page, size, sort));
         PageResponse<VendorResponse> response = PageResponse.<VendorResponse>builder()
                 .content(professionals.getContent())
                 .number(professionals.getNumber())
