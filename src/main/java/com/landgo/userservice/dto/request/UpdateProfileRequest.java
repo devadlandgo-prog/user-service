@@ -23,7 +23,8 @@ public class UpdateProfileRequest {
     private java.util.List<CertificationRequest> certifications;
     @Size(max = 1000) private String bio; // mapped to VendorProfile.bio
     @Size(max = 2000) private String companyDescription;
-    
+    @Size(max = 500) private String companyLogo;
+
     // Additional address fields
     private String businessAddress;
     private String businessCity;

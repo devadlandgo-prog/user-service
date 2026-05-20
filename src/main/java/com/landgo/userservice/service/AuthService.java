@@ -324,8 +324,8 @@ public class AuthService {
                 if (request.getBusinessCountry() != null) profile.setBusinessCountry(request.getBusinessCountry());
                 if (request.getWebsite() != null) profile.setWebsite(request.getWebsite());
                 if (request.getPhone() != null) profile.setPhoneNumber(request.getPhone().isBlank() ? null : request.getPhone());
-                if (request.getProfileImageUrl() != null)
-                    profile.setCompanyLogo(request.getProfileImageUrl().isBlank() ? null : request.getProfileImageUrl());
+                if (request.getCompanyLogo() != null)
+                    profile.setCompanyLogo(request.getCompanyLogo().isBlank() ? null : request.getCompanyLogo());
                 vendorProfileRepository.save(profile);
             });
         }
