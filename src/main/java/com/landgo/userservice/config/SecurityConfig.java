@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/internal/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/professionals/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/user/professionals/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/professionals/register").permitAll()
                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
