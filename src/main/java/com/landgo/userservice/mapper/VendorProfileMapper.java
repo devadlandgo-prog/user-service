@@ -40,7 +40,7 @@ public interface VendorProfileMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "phoneNumber", source = "phone")
-    @Mapping(target = "companyLogo", source = "profileImageUrl")
+    @Mapping(target = "companyLogo", source = "companyLogo")
     @Mapping(target = "companyDescription", source = "companyDescription")
     @Mapping(target = "website", source = "website")
     @Mapping(target = "businessLicense", source = "licenseNumber")

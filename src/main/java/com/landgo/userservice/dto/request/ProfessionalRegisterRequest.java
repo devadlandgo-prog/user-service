@@ -51,5 +51,8 @@ public class ProfessionalRegisterRequest {
     private String companyDescription;
 
     @Size(max = 500)
+    private String companyLogo;
+
+    @Size(max = 500)
     private String website;
 }
