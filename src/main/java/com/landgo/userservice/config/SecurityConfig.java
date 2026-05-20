@@ -38,9 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                 .requestMatchers("/internal/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/professionals/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/user/professionals/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/professionals/register").permitAll()
+                .requestMatchers("/professionals/**").permitAll()
                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
