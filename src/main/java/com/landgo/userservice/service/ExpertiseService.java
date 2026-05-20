@@ -59,4 +59,11 @@ public class ExpertiseService {
         }
         expertiseRepository.deleteById(id);
     }
+
+    @Transactional
+    public void deleteExpertiseByName(String name) {
+        Expertise expertise = expertiseRepository.findByName(name)
+                .orElseThrow(() -> new ResourceNotFoundException("Expertise not found with name: " + name));
+        expertiseRepository.delete(expertise);
+    }
 }

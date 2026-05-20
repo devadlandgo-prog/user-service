@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface ExpertiseRepository extends JpaRepository<Expertise, UUID> {
     List<Expertise> findByActiveTrue();
     boolean existsByName(String name);
+    java.util.Optional<Expertise> findByName(String name);
 }

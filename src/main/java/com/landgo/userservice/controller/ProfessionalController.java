@@ -70,11 +70,18 @@ public class ProfessionalController {
         return ResponseEntity.ok(ApiResponse.success("Expertise updated successfully", expertise));
     }
 
-    @DeleteMapping("/expertise-options/{id}")
+    @DeleteMapping("/expertise-options/{identifier}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Admin: Delete an expertise option")
-    public ResponseEntity<ApiResponse<Void>> deleteExpertise(@PathVariable UUID id) {
-        expertiseService.deleteExpertise(id);
+    @Operation(summary = "Admin: Delete an expertise option by ID or name")
+    public ResponseEntity<ApiResponse<Void>> deleteExpertise(@PathVariable String identifier) {
+        // Try to parse as UUID first, if fails, treat as name
+        try {
+            UUID id = UUID.fromString(identifier);
+            expertiseService.deleteExpertise(id);
+        } catch (IllegalArgumentException e) {
+            // Not a UUID, treat as name
+            expertiseService.deleteExpertiseByName(identifier);
+        }
         return ResponseEntity.ok(ApiResponse.success("Expertise deleted successfully", null));
     }
 
