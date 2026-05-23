@@ -12,6 +12,7 @@ import com.landgo.userservice.enums.Role;
 import com.landgo.userservice.enums.UserType;
 import com.landgo.userservice.exception.BadRequestException;
 import com.landgo.userservice.exception.ConflictException;
+import com.landgo.userservice.exception.ApiException;
 import com.landgo.userservice.exception.ResourceNotFoundException;
 import com.landgo.userservice.factory.OAuth2StrategyFactory;
 import com.landgo.userservice.mapper.UserMapper;
@@ -25,6 +26,7 @@ import com.landgo.userservice.strategy.OAuth2AuthenticationStrategy;
 import com.landgo.userservice.strategy.OAuth2UserInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -427,20 +429,20 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse refreshAccessToken(RefreshTokenRequest request) {
         if (!tokenProvider.validateToken(request.getRefreshToken())) {
-            throw new BadRequestException("Invalid or expired refresh token", "AUTH_INVALID_REFRESH_TOKEN");
+            throw new ApiException("Invalid or expired refresh token", HttpStatus.UNAUTHORIZED, "AUTH_INVALID_REFRESH_TOKEN");
         }
 
         var claims = tokenProvider.getClaimsFromToken(request.getRefreshToken());
         Object tokenType = claims.get("type");
         if (!"REFRESH".equals(tokenType)) {
-            throw new BadRequestException("Invalid token type for refresh", "AUTH_INVALID_REFRESH_TOKEN");
+            throw new ApiException("Invalid token type for refresh", HttpStatus.UNAUTHORIZED, "AUTH_INVALID_REFRESH_TOKEN");
         }
 
         UUID userId = UUID.fromString(claims.getSubject());
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!user.isActive()) {
-            throw new BadRequestException("User account is inactive", "AUTH_ACCOUNT_INACTIVE");
+            throw new ApiException("User account is inactive", HttpStatus.UNAUTHORIZED, "AUTH_ACCOUNT_INACTIVE");
         }
 
         return generateAuthResponse(user);
@@ -658,6 +660,8 @@ public class AuthService {
                 if (request.getBusinessZipCode() != null) profile.setBusinessZipCode(request.getBusinessZipCode());
                 if (request.getBusinessCountry() != null) profile.setBusinessCountry(request.getBusinessCountry());
                 if (request.getWebsite() != null) profile.setWebsite(request.getWebsite());
+                if (request.getCompanyLogo() != null)
+                    profile.setCompanyLogo(request.getCompanyLogo().isBlank() ? null : request.getCompanyLogo());
                 
                 vendorProfileRepository.save(profile);
             });

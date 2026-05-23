@@ -28,6 +28,7 @@ import java.util.List;
 import com.landgo.userservice.service.ExpertiseService;
 import com.landgo.userservice.dto.request.ExpertiseRequest;
 import com.landgo.userservice.entity.Expertise;
+import com.landgo.userservice.exception.BadRequestException;
 
 @Slf4j
 @RestController
@@ -47,7 +48,21 @@ public class ProfessionalController {
     public ResponseEntity<ApiResponse<List<String>>> getExpertiseOptions() {
         List<String> options = expertiseService.getAllExpertise(true).stream()
                 .map(Expertise::getName)
-                .toList();
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.collectingAndThen(
+                        java.util.stream.Collectors.toMap(
+                                name -> name.toLowerCase(),
+                                name -> name,
+                                (existing, replacement) -> existing,
+                                java.util.LinkedHashMap::new),
+                        map -> {
+                            java.util.List<String> result = new java.util.ArrayList<>(map.values());
+                            if (result.stream().noneMatch(name -> "CONTRACTOR".equalsIgnoreCase(name))) {
+                                result.add("CONTRACTOR");
+                            }
+                            return result;
+                        }));
         return ResponseEntity.ok(ApiResponse.success(options));
     }
 
@@ -93,13 +108,13 @@ public class ProfessionalController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Sort sort = Sort.by(Sort.Order.desc("createdAt").nullsLast());
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
-                case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
-                case "most_reviews" -> Sort.by(Sort.Direction.DESC, "totalReviews");
-                case "most_experience" -> Sort.by(Sort.Direction.DESC, "yearsOfExperience");
-                case "newest" -> Sort.by(Sort.Direction.DESC, "createdAt");
+                case "rating" -> Sort.by(Sort.Order.desc("rating").nullsLast());
+                case "most_reviews" -> Sort.by(Sort.Order.desc("totalReviews").nullsLast());
+                case "most_experience" -> Sort.by(Sort.Order.desc("yearsOfExperience").nullsLast());
+                case "newest" -> Sort.by(Sort.Order.desc("createdAt").nullsLast());
                 default -> sort;
             };
         }
@@ -126,12 +141,12 @@ public class ProfessionalController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        Sort sort = Sort.by(Sort.Order.desc("createdAt").nullsLast());
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
-                case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
-                case "most_reviews" -> Sort.by(Sort.Direction.DESC, "totalReviews");
-                case "most_experience" -> Sort.by(Sort.Direction.DESC, "yearsOfExperience");
+                case "rating" -> Sort.by(Sort.Order.desc("rating").nullsLast());
+                case "most_reviews" -> Sort.by(Sort.Order.desc("totalReviews").nullsLast());
+                case "most_experience" -> Sort.by(Sort.Order.desc("yearsOfExperience").nullsLast());
                 default -> sort;
             };
         }
@@ -151,9 +166,15 @@ public class ProfessionalController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get professional profile by user ID")
-    public ResponseEntity<ApiResponse<VendorResponse>> getProfessionalById(@PathVariable UUID id) {
-        VendorResponse vendor = vendorService.getVendorProfile(id);
+    @Operation(summary = "Get professional profile by vendor id or userId")
+    public ResponseEntity<ApiResponse<VendorResponse>> getProfessionalById(@PathVariable String id) {
+        UUID identifier;
+        try {
+            identifier = UUID.fromString(id);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid professional id format", "VALIDATION_ERROR");
+        }
+        VendorResponse vendor = vendorService.getVendorProfileResolved(identifier);
         return ResponseEntity.ok(ApiResponse.success(vendor));
     }
 

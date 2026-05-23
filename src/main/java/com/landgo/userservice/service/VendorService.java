@@ -169,6 +169,16 @@ public class VendorService {
         return vendorProfileMapper.toResponse(profile);
     }
 
+    @Transactional(readOnly = true)
+    public VendorResponse getVendorProfileResolved(@NonNull UUID identifier) {
+        return vendorProfileRepository.findById(identifier)
+                .map(vendorProfileMapper::toResponse)
+                .or(() -> userRepository.findById(identifier)
+                        .flatMap(vendorProfileRepository::findByUser)
+                        .map(vendorProfileMapper::toResponse))
+                .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", identifier));
+    }
+
     @Transactional
     public VendorResponse updateVendorProfile(@NonNull UUID userId, VendorProfileRequest request) {
         User user = userRepository.findById(userId)

@@ -100,10 +100,16 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    @Operation(summary = "Refresh access token")
+    @Operation(summary = "Refresh access token using refreshToken")
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         AuthResponse response = authService.refreshAccessToken(request);
         return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token using refreshToken (alias)")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshTokenAlias(@Valid @RequestBody RefreshTokenRequest request) {
+        return refreshToken(request);
     }
 
     @PostMapping("/reset-password")
