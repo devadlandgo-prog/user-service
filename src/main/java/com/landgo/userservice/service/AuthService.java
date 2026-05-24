@@ -310,35 +310,36 @@ public class AuthService {
         user = userRepository.save(user);
 
         if (user.isProfessional()) {
-            var profile = vendorProfileRepository.findByUser(user)
-                    .orElseGet(() -> {
-                        var newProfile = new com.landgo.userservice.entity.VendorProfile();
-                        newProfile.setUser(user);
-                        newProfile.setBusinessAddress("TBD");
-                        newProfile.setBusinessCity("TBD");
-                        newProfile.setBusinessState("TBD");
-                        newProfile.setBusinessZipCode("TBD");
-                        newProfile.setBusinessCountry("TBD");
-                        return vendorProfileRepository.save(newProfile);
-                    });
-            if (request.getCompanyName() != null) profile.setCompanyName(request.getCompanyName());
-            if (request.getLicenseNumber() != null) profile.setBusinessLicense(request.getLicenseNumber());
-            if (request.getSpecialization() != null) profile.setSpecialization(request.getSpecialization());
-            if (request.getYearsOfExperience() != null) profile.setYearsOfExperience(request.getYearsOfExperience());
-            if (request.getServiceArea() != null) profile.setServiceArea(request.getServiceArea());
-            if (request.getCertifications() != null) profile.setCertifications(mapCertifications(request.getCertifications()));
-            if (request.getBio() != null) profile.setBio(request.getBio());
-            if (request.getCompanyDescription() != null) profile.setCompanyDescription(request.getCompanyDescription());
-            if (request.getBusinessAddress() != null) profile.setBusinessAddress(request.getBusinessAddress());
-            if (request.getBusinessCity() != null) profile.setBusinessCity(request.getBusinessCity());
-            if (request.getBusinessState() != null) profile.setBusinessState(request.getBusinessState());
-            if (request.getBusinessZipCode() != null) profile.setBusinessZipCode(request.getBusinessZipCode());
-            if (request.getBusinessCountry() != null) profile.setBusinessCountry(request.getBusinessCountry());
-            if (request.getWebsite() != null) profile.setWebsite(request.getWebsite());
-            if (request.getPhone() != null) profile.setPhoneNumber(request.getPhone().isBlank() ? null : request.getPhone());
+            var profile = vendorProfileRepository.findByUser(user);
+            if (profile.isEmpty()) {
+                var newProfile = new com.landgo.userservice.entity.VendorProfile();
+                newProfile.setUser(user);
+                newProfile.setBusinessAddress("TBD");
+                newProfile.setBusinessCity("TBD");
+                newProfile.setBusinessState("TBD");
+                newProfile.setBusinessZipCode("TBD");
+                newProfile.setBusinessCountry("TBD");
+                profile = java.util.Optional.of(vendorProfileRepository.save(newProfile));
+            }
+            var profileEntity = profile.get();
+            if (request.getCompanyName() != null) profileEntity.setCompanyName(request.getCompanyName());
+            if (request.getLicenseNumber() != null) profileEntity.setBusinessLicense(request.getLicenseNumber());
+            if (request.getSpecialization() != null) profileEntity.setSpecialization(request.getSpecialization());
+            if (request.getYearsOfExperience() != null) profileEntity.setYearsOfExperience(request.getYearsOfExperience());
+            if (request.getServiceArea() != null) profileEntity.setServiceArea(request.getServiceArea());
+            if (request.getCertifications() != null) profileEntity.setCertifications(mapCertifications(request.getCertifications()));
+            if (request.getBio() != null) profileEntity.setBio(request.getBio());
+            if (request.getCompanyDescription() != null) profileEntity.setCompanyDescription(request.getCompanyDescription());
+            if (request.getBusinessAddress() != null) profileEntity.setBusinessAddress(request.getBusinessAddress());
+            if (request.getBusinessCity() != null) profileEntity.setBusinessCity(request.getBusinessCity());
+            if (request.getBusinessState() != null) profileEntity.setBusinessState(request.getBusinessState());
+            if (request.getBusinessZipCode() != null) profileEntity.setBusinessZipCode(request.getBusinessZipCode());
+            if (request.getBusinessCountry() != null) profileEntity.setBusinessCountry(request.getBusinessCountry());
+            if (request.getWebsite() != null) profileEntity.setWebsite(request.getWebsite());
+            if (request.getPhone() != null) profileEntity.setPhoneNumber(request.getPhone().isBlank() ? null : request.getPhone());
             if (request.getCompanyLogo() != null)
-                profile.setCompanyLogo(request.getCompanyLogo().isBlank() ? null : request.getCompanyLogo());
-            vendorProfileRepository.save(profile);
+                profileEntity.setCompanyLogo(request.getCompanyLogo().isBlank() ? null : request.getCompanyLogo());
+            vendorProfileRepository.save(profileEntity);
         }
 
         log.info("Profile updated for user: {}", user.getEmail());
