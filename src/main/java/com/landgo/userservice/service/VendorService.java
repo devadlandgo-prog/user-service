@@ -245,17 +245,44 @@ public class VendorService {
 
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<VendorResponse> getVerifiedProfessionals(String specialization, org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Pageable pageOnly = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize());
+        String sortKey = pageable.getSort().stream()
+                .findFirst()
+                .map(org.springframework.data.domain.Sort.Order::getProperty)
+                .orElse("createdAt");
+
         if (specialization == null || specialization.isBlank()) {
             return vendorProfileRepository.findByVerifiedTrue(pageable)
                     .map(vendorProfileMapper::toResponse);
         }
-        return vendorProfileRepository.findByVerifiedTrueAndSpecialization(specialization, pageable)
+        org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
+            case "rating" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByRatingDesc(specialization, pageOnly);
+            case "totalReviews" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByTotalReviewsDesc(specialization, pageOnly);
+            case "yearsOfExperience" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByYearsOfExperienceDesc(specialization, pageOnly);
+            default -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByCreatedAtDesc(specialization, pageOnly);
+        };
+        return page
                 .map(vendorProfileMapper::toResponse);
     }
     
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<VendorResponse> searchProfessionals(String q, org.springframework.data.domain.Pageable pageable) {
-        return vendorProfileRepository.searchProfessionals(q, pageable)
+        org.springframework.data.domain.Pageable pageOnly = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize());
+        String sortKey = pageable.getSort().stream()
+                .findFirst()
+                .map(org.springframework.data.domain.Sort.Order::getProperty)
+                .orElse("createdAt");
+
+        org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
+            case "rating" -> vendorProfileRepository.searchProfessionalsOrderByRatingDesc(q, pageOnly);
+            case "totalReviews" -> vendorProfileRepository.searchProfessionalsOrderByTotalReviewsDesc(q, pageOnly);
+            case "yearsOfExperience" -> vendorProfileRepository.searchProfessionalsOrderByYearsOfExperienceDesc(q, pageOnly);
+            default -> vendorProfileRepository.searchProfessionalsOrderByCreatedAtDesc(q, pageOnly);
+        };
+
+        return page
                 .map(vendorProfileMapper::toResponse);
     }
 

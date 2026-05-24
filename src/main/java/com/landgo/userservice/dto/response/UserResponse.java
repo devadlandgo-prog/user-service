@@ -26,6 +26,9 @@ public class UserResponse {
     private boolean active;
     private String agencyName;
     private String companyLogo;
+    private java.util.List<String> specialization;
+    private Integer yearsOfExperience;
+    private java.util.List<String> serviceArea;
     private String recoLicenseNumber;
     private boolean isVendor;
     private boolean isProfessional;

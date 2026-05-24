@@ -685,7 +685,12 @@ public class AuthService {
         UserResponse response = userMapper.toResponse(user);
         if (user.isProfessional()) {
             vendorProfileRepository.findByUser(user)
-                    .ifPresent(profile -> response.setCompanyLogo(profile.getCompanyLogo()));
+                    .ifPresent(profile -> {
+                        response.setCompanyLogo(profile.getCompanyLogo());
+                        response.setSpecialization(profile.getSpecialization());
+                        response.setYearsOfExperience(profile.getYearsOfExperience());
+                        response.setServiceArea(profile.getServiceArea());
+                    });
         }
         return response;
     }

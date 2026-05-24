@@ -27,6 +27,46 @@ public interface VendorProfileRepository extends JpaRepository<VendorProfile, UU
             @org.springframework.data.repository.query.Param("specialization") String specialization,
             org.springframework.data.domain.Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization)) " +
+           "ORDER BY vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueAndSpecializationOrderByCreatedAtDesc(
+            @org.springframework.data.repository.query.Param("specialization") String specialization,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization)) " +
+           "ORDER BY vp.rating DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueAndSpecializationOrderByRatingDesc(
+            @org.springframework.data.repository.query.Param("specialization") String specialization,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization)) " +
+           "ORDER BY vp.total_reviews DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueAndSpecializationOrderByTotalReviewsDesc(
+            @org.springframework.data.repository.query.Param("specialization") String specialization,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization)) " +
+           "ORDER BY vp.years_of_experience DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true " +
+           "AND EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueAndSpecializationOrderByYearsOfExperienceDesc(
+            @org.springframework.data.repository.query.Param("specialization") String specialization,
+            org.springframework.data.domain.Pageable pageable);
+
     @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
            "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
            "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
@@ -41,6 +81,78 @@ public interface VendorProfileRepository extends JpaRepository<VendorProfile, UU
            "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
            nativeQuery = true)
     org.springframework.data.domain.Page<VendorProfile> searchProfessionals(@org.springframework.data.repository.query.Param("q") String query, org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%')))) " +
+           "ORDER BY vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> searchProfessionalsOrderByCreatedAtDesc(
+            @org.springframework.data.repository.query.Param("q") String query,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%')))) " +
+           "ORDER BY vp.rating DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> searchProfessionalsOrderByRatingDesc(
+            @org.springframework.data.repository.query.Param("q") String query,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%')))) " +
+           "ORDER BY vp.total_reviews DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> searchProfessionalsOrderByTotalReviewsDesc(
+            @org.springframework.data.repository.query.Param("q") String query,
+            org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%')))) " +
+           "ORDER BY vp.years_of_experience DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp JOIN users.users u ON vp.user_id = u.id WHERE vp.verified = true AND (" +
+           "LOWER(u.full_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.company_name) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.bio) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "LOWER(vp.business_city) LIKE LOWER(CONCAT('%', :q, '%')) OR " +
+           "EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) LIKE LOWER(CONCAT('%', :q, '%'))))",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> searchProfessionalsOrderByYearsOfExperienceDesc(
+            @org.springframework.data.repository.query.Param("q") String query,
+            org.springframework.data.domain.Pageable pageable);
 
     @Modifying
     @Query("UPDATE VendorProfile vp SET vp.viewCount = vp.viewCount + 1 WHERE vp.id = :id")
