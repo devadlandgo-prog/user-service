@@ -18,6 +18,26 @@ public interface VendorProfileRepository extends JpaRepository<VendorProfile, UU
 
     org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrue(org.springframework.data.domain.Pageable pageable);
 
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true ORDER BY vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueOrderByCreatedAtDesc(org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true ORDER BY vp.rating DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueOrderByRatingDesc(org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true ORDER BY vp.total_reviews DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueOrderByTotalReviewsDesc(org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true ORDER BY vp.years_of_experience DESC NULLS LAST, vp.created_at DESC",
+           countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true",
+           nativeQuery = true)
+    org.springframework.data.domain.Page<VendorProfile> findByVerifiedTrueOrderByYearsOfExperienceDesc(org.springframework.data.domain.Pageable pageable);
+
     @org.springframework.data.jpa.repository.Query(value = "SELECT vp.* FROM users.vendor_profiles vp WHERE vp.verified = true " +
            "AND (:specialization IS NULL OR EXISTS (SELECT 1 FROM unnest(vp.specialization) s WHERE LOWER(s) = LOWER(:specialization)))",
            countQuery = "SELECT count(*) FROM users.vendor_profiles vp WHERE vp.verified = true " +

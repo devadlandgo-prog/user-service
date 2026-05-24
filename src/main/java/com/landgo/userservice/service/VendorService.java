@@ -253,7 +253,13 @@ public class VendorService {
                 .orElse("createdAt");
 
         if (specialization == null || specialization.isBlank()) {
-            return vendorProfileRepository.findByVerifiedTrue(pageable)
+            org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
+                case "rating" -> vendorProfileRepository.findByVerifiedTrueOrderByRatingDesc(pageOnly);
+                case "totalReviews" -> vendorProfileRepository.findByVerifiedTrueOrderByTotalReviewsDesc(pageOnly);
+                case "yearsOfExperience" -> vendorProfileRepository.findByVerifiedTrueOrderByYearsOfExperienceDesc(pageOnly);
+                default -> vendorProfileRepository.findByVerifiedTrueOrderByCreatedAtDesc(pageOnly);
+            };
+            return page
                     .map(vendorProfileMapper::toResponse);
         }
         org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
