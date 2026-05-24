@@ -25,6 +25,7 @@ public class UserResponse {
     private LocalDateTime emailVerifiedAt;
     private boolean active;
     private String agencyName;
+    private String companyLogo;
     private String recoLicenseNumber;
     private boolean isVendor;
     private boolean isProfessional;

@@ -278,7 +278,7 @@ public class AuthService {
     public UserResponse getCurrentUser(UserPrincipal userPrincipal) {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return userMapper.toResponse(user);
+        return toUserResponseWithProfessionalProfile(user);
     }
 
     // ==========================================
@@ -333,7 +333,7 @@ public class AuthService {
         }
 
         log.info("Profile updated for user: {}", user.getEmail());
-        return userMapper.toResponse(user);
+        return toUserResponseWithProfessionalProfile(user);
     }
 
     // ==========================================
@@ -668,7 +668,16 @@ public class AuthService {
         }
 
         log.info("Admin updated professional profile for user: {}", userId);
-        return userMapper.toResponse(user);
+        return toUserResponseWithProfessionalProfile(user);
+    }
+
+    private UserResponse toUserResponseWithProfessionalProfile(User user) {
+        UserResponse response = userMapper.toResponse(user);
+        if (user.isProfessional()) {
+            vendorProfileRepository.findByUser(user)
+                    .ifPresent(profile -> response.setCompanyLogo(profile.getCompanyLogo()));
+        }
+        return response;
     }
 
     @Transactional
