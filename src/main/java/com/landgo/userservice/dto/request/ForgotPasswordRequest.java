@@ -5,5 +5,5 @@ import lombok.*;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ForgotPasswordRequest {
-    @NotBlank @Email private String email;
+    @NotBlank private String emailOrPhone;
 }

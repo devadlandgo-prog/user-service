@@ -1,8 +1,0 @@
-databaseChangeLog:
-  - changeSet:
-      id: 20260519-migrate-vendor-certifications-to-jsonb
-      author: cascade
-      changes:
-        - sqlFile:
-            path: ../ddl/001_migrate_vendor_certifications_to_jsonb.sql
-            relativeToChangelogFile: true

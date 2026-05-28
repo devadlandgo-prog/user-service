@@ -13,6 +13,8 @@ import java.util.UUID;
 @Repository
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> {
     Optional<PasswordResetToken> findByTokenAndUsedFalse(String token);
+    Optional<PasswordResetToken> findTopByUserAndUsedFalseOrderByCreatedAtDesc(User user);
+
     @Modifying
     @Query("UPDATE PasswordResetToken t SET t.used = true WHERE t.user = :user AND t.used = false")
     void invalidateAllTokensForUser(@Param("user") User user);

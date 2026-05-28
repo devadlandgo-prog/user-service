@@ -4,9 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
-public class ResetPasswordRequest {
+public class ForgotPasswordVerifyRequest {
     @NotBlank private String emailOrPhone;
     @NotBlank @Pattern(regexp = "^[0-9]{4}$", message = "Code must be 4 digits") private String code;
-    @NotBlank @Size(min = 8) private String password;
-    @NotBlank private String confirmPassword;
 }

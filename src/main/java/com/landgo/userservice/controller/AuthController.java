@@ -79,10 +79,17 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    @Operation(summary = "Request password reset")
+    @Operation(summary = "Request forgot-password verification code")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request);
-        return ResponseEntity.ok(ApiResponse.success("If an account exists, a reset link has been sent", null));
+        return ResponseEntity.ok(ApiResponse.success("If an account exists, a verification code has been sent", null));
+    }
+
+    @PostMapping("/forgot-password/verify-code")
+    @Operation(summary = "Verify forgot-password code")
+    public ResponseEntity<ApiResponse<Void>> verifyForgotPasswordCode(@Valid @RequestBody ForgotPasswordVerifyRequest request) {
+        authService.verifyForgotPasswordCode(request);
+        return ResponseEntity.ok(ApiResponse.success("Code verified successfully", null));
     }
 
     @GetMapping("/me")
@@ -113,7 +120,7 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    @Operation(summary = "Reset password with token")
+    @Operation(summary = "Reset password with verification code")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));

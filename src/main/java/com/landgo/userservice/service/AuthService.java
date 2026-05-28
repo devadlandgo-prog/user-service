@@ -57,6 +57,7 @@ public class AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
+    private final TwilioService twilioService;
     private final MfaService mfaService;
     private final LoginAuditService loginAuditService;
     private final VendorProfileRepository vendorProfileRepository;
@@ -414,18 +415,53 @@ public class AuthService {
 
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        String identifier = request.getEmailOrPhone();
+        User user = userRepository.findByIdentifier(identifier).orElse(null);
         if (user == null || user.getAuthProvider() != AuthProvider.EMAIL) {
-            log.info("Forgot password requested for non-existent or OAuth user: {}", request.getEmail());
+            log.info("Forgot password requested for non-existent or OAuth user: {}", identifier);
             return;
         }
-        passwordResetTokenRepository.invalidateAllTokensForUser(user);
-        String token = UUID.randomUUID().toString();
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token).user(user).expiryDate(LocalDateTime.now().plusMinutes(30)).build();
-        passwordResetTokenRepository.save(resetToken);
-        emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
-        log.info("Password reset token generated for user: {}", user.getEmail());
+
+        if (isEmailIdentifier(identifier)) {
+            passwordResetTokenRepository.invalidateAllTokensForUser(user);
+            String code = generateUniquePasswordResetCode();
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .token(code)
+                    .user(user)
+                    .expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES))
+                    .build();
+            passwordResetTokenRepository.save(resetToken);
+            emailService.sendPasswordResetCodeEmail(user.getEmail(), user.getFirstName(), code);
+            log.info("Password reset code generated via email for user: {}", user.getEmail());
+            return;
+        }
+
+        if (user.getPhone() == null || user.getPhone().isBlank()) {
+            log.info("Forgot password requested with phone, but no phone on profile for user: {}", user.getId());
+            return;
+        }
+
+        twilioService.sendVerificationCode(user.getPhone());
+        log.info("Password reset code sent via SMS for user: {}", user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyForgotPasswordCode(ForgotPasswordVerifyRequest request) {
+        User user = userRepository.findByIdentifier(request.getEmailOrPhone())
+                .orElseThrow(() -> new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE"));
+        if (user.getAuthProvider() != AuthProvider.EMAIL) {
+            throw new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE");
+        }
+
+        if (isEmailIdentifier(request.getEmailOrPhone())) {
+            validateEmailPasswordResetCode(user, request.getCode());
+            return;
+        }
+
+        boolean approved = twilioService.checkVerificationCode(user.getPhone(), request.getCode());
+        if (!approved) {
+            throw new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -463,17 +499,25 @@ public class AuthService {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BadRequestException("Password and confirm password do not match", "VALIDATION_ERROR");
         }
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(request.getToken())
-                .orElseThrow(() -> new BadRequestException("Invalid or expired password reset link", "AUTH_INVALID_OR_EXPIRED_TOKEN"));
-        if (resetToken.isExpired())
-            throw new BadRequestException("Password reset link has expired. Please request a new one.", "AUTH_INVALID_OR_EXPIRED_TOKEN");
 
-        User user = resetToken.getUser();
+        User user = userRepository.findByIdentifier(request.getEmailOrPhone())
+                .orElseThrow(() -> new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE"));
+        if (user.getAuthProvider() != AuthProvider.EMAIL) {
+            throw new BadRequestException("Cannot reset password for OAuth accounts", "AUTH_OAUTH_PROVIDER_MISMATCH");
+        }
+
+        if (isEmailIdentifier(request.getEmailOrPhone())) {
+            validateEmailPasswordResetCode(user, request.getCode());
+            passwordResetTokenRepository.invalidateAllTokensForUser(user);
+        } else {
+            boolean approved = twilioService.checkVerificationCode(user.getPhone(), request.getCode());
+            if (!approved) {
+                throw new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE");
+            }
+        }
+
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        resetToken.setUsed(true);
-        passwordResetTokenRepository.save(resetToken);
-        passwordResetTokenRepository.invalidateAllTokensForUser(user);
         log.info("Password reset successfully for user: {}", user.getEmail());
     }
 
@@ -530,6 +574,31 @@ public class AuthService {
                 .code(code).user(user).expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)).build();
         emailVerificationTokenRepository.save(token);
         emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code, token.getId().toString());
+    }
+
+    private String generateUniquePasswordResetCode() {
+        for (int i = 0; i < 10; i++) {
+            String code = String.valueOf(SECURE_RANDOM.nextInt(9000) + 1000);
+            if (passwordResetTokenRepository.findByTokenAndUsedFalse(code).isEmpty()) {
+                return code;
+            }
+        }
+        throw new ApiException("Unable to generate verification code. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR, "AUTH_CODE_GENERATION_FAILED");
+    }
+
+    private void validateEmailPasswordResetCode(User user, String code) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .orElseThrow(() -> new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE"));
+        if (resetToken.isExpired()) {
+            throw new BadRequestException("Verification code has expired. Please request a new one.", "AUTH_CODE_EXPIRED");
+        }
+        if (!resetToken.getToken().equals(code)) {
+            throw new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE");
+        }
+    }
+
+    private boolean isEmailIdentifier(String identifier) {
+        return identifier != null && identifier.contains("@");
     }
 
     private UserResponse completeEmailVerification(EmailVerificationToken token) {
