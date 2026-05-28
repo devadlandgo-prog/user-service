@@ -105,18 +105,22 @@ public class ProfessionalController {
     public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> getVerifiedProfessionals(
             @RequestParam(required = false) String specialization,
             @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(Sort.Order.desc("createdAt").nullsLast());
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
-                case "rating" -> Sort.by(Sort.Order.desc("rating").nullsLast());
-                case "most_reviews" -> Sort.by(Sort.Order.desc("totalReviews").nullsLast());
-                case "most_experience" -> Sort.by(Sort.Order.desc("yearsOfExperience").nullsLast());
-                case "newest" -> Sort.by(Sort.Order.desc("createdAt").nullsLast());
+                case "rating" -> Sort.by(new Sort.Order(direction, "rating").nullsLast());
+                case "most_reviews" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
+                case "most_experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
+                case "newest" -> Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
                 default -> sort;
             };
+        } else {
+            sort = Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
         }
 
         Page<VendorResponse> professionals = vendorService.getVerifiedProfessionals(
@@ -138,17 +142,21 @@ public class ProfessionalController {
     public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> searchProfessionals(
             @RequestParam String q,
             @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         Sort sort = Sort.by(Sort.Order.desc("createdAt").nullsLast());
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
-                case "rating" -> Sort.by(Sort.Order.desc("rating").nullsLast());
-                case "most_reviews" -> Sort.by(Sort.Order.desc("totalReviews").nullsLast());
-                case "most_experience" -> Sort.by(Sort.Order.desc("yearsOfExperience").nullsLast());
+                case "rating" -> Sort.by(new Sort.Order(direction, "rating").nullsLast());
+                case "most_reviews" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
+                case "most_experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
                 default -> sort;
             };
+        } else {
+            sort = Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
         }
 
         Page<VendorResponse> professionals = vendorService.searchProfessionals(q,
