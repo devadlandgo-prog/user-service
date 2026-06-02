@@ -316,14 +316,18 @@ public class AuthService {
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
 
-        if (user.isProfessional() || user.isVendor()) {
+        // Only sync vendor fields on User entity if user is already a professional OR
+        // the request explicitly contains vendor-specific fields (intent-based promotion)
+        boolean shouldUpdateVendor = user.isProfessional() || hasVendorFields(request);
+
+        if (shouldUpdateVendor) {
             if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
             if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
         }
 
         user = userRepository.save(user);
 
-        if (user.isProfessional() || user.isVendor()) {
+        if (shouldUpdateVendor) {
             var profile = vendorProfileRepository.findByUser(user);
             if (profile.isEmpty()) {
                 user.setProfessional(true);
@@ -693,9 +697,29 @@ public class AuthService {
     private boolean isProfessionalRole(String role) {
         if (role == null) return false;
         return switch (role.trim().toLowerCase()) {
-            case "professional", "agent", "vendor" -> true;
+            case "professional", "agent" -> true;
             default -> false;
         };
+    }
+
+    /**
+     * Checks if the UpdateProfileRequest contains any vendor/professional-specific fields.
+     * Used to detect intent-based professional onboarding via PATCH /profile.
+     * This avoids using user.isVendor() which is true for ALL non-admin users
+     * since Role only has VENDOR and ADMIN.
+     */
+    private boolean hasVendorFields(UpdateProfileRequest request) {
+        return request.getCompanyName() != null
+                || request.getLicenseNumber() != null
+                || request.getSpecialization() != null
+                || request.getYearsOfExperience() != null
+                || request.getServiceArea() != null
+                || request.getCertifications() != null
+                || request.getBio() != null
+                || request.getCompanyDescription() != null
+                || request.getCompanyLogo() != null
+                || request.getBusinessAddress() != null
+                || request.getWebsite() != null;
     }
 
     @Transactional
@@ -756,7 +780,9 @@ public class AuthService {
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
         
         // Sync redundant fields on User entity if it's a professional
-        if (user.isProfessional() || user.isVendor()) {
+        // Admin endpoint is explicitly for professional management, so use isProfessional || hasVendorFields
+        boolean shouldUpdateVendor = user.isProfessional() || hasVendorFields(request);
+        if (shouldUpdateVendor) {
             if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
             if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
         }
@@ -764,8 +790,8 @@ public class AuthService {
         user = userRepository.save(user);
 
         // Update VendorProfile entity if it exists
-        if (user.isProfessional() || user.isVendor()) {
-            if (user.isVendor() && !user.isProfessional()) {
+        if (shouldUpdateVendor) {
+            if (!user.isProfessional()) {
                 user.setProfessional(true);
                 user = userRepository.save(user);
             }
@@ -799,7 +825,7 @@ public class AuthService {
 
     private UserResponse toUserResponseWithProfessionalProfile(User user) {
         UserResponse response = userMapper.toResponse(user);
-        if (user.isProfessional() || user.isVendor()) {
+        if (user.isProfessional()) {
             vendorProfileRepository.findByUser(user)
                     .ifPresent(profile -> {
                         response.setCompanyLogo(profile.getCompanyLogo());
