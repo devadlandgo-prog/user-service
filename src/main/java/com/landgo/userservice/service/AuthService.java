@@ -116,6 +116,14 @@ public class AuthService {
         user = userRepository.save(user);
         log.info("User registered successfully: {}", user.getId());
         generateAndSendVerificationCode(user);
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            try {
+                twilioService.sendVerificationCode(user.getPhone());
+                log.info("Signup OTP sent via SMS to: {}", user.getPhone());
+            } catch (Exception e) {
+                log.error("Failed to send signup OTP via SMS to " + user.getPhone(), e);
+            }
+        }
         log.debug("Verification email process initiated for: {}", user.getEmail());
         return userMapper.toResponse(user);
     }
@@ -133,6 +141,11 @@ public class AuthService {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         log.info("User login attempt: {}", user.getEmail());
+        
+        if (!user.isEmailVerified()) {
+            log.warn("Login failed: Email {} is not verified", user.getEmail());
+            throw new BadRequestException("Email address is not verified. Please verify your email first.", "AUTH_EMAIL_NOT_VERIFIED");
+        }
         
         if (user.isMfaEnabled()) {
             log.info("MFA required for user: {}", user.getEmail());
@@ -303,18 +316,22 @@ public class AuthService {
         if (request.getProfessionalBio() != null) user.setProfessionalBio(request.getProfessionalBio().isBlank() ? null : request.getProfessionalBio());
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
 
-        if (user.isProfessional()) {
+        if (user.isProfessional() || user.isVendor()) {
             if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
             if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
         }
 
         user = userRepository.save(user);
 
-        if (user.isProfessional()) {
+        if (user.isProfessional() || user.isVendor()) {
             var profile = vendorProfileRepository.findByUser(user);
             if (profile.isEmpty()) {
+                user.setProfessional(true);
+                user = userRepository.save(user);
                 var newProfile = new com.landgo.userservice.entity.VendorProfile();
+                newProfile.setId(user.getId());
                 newProfile.setUser(user);
+                newProfile.setCompanyName(request.getCompanyName() != null && !request.getCompanyName().isBlank() ? request.getCompanyName() : "TBD");
                 newProfile.setBusinessAddress("TBD");
                 newProfile.setBusinessCity("TBD");
                 newProfile.setBusinessState("TBD");
@@ -359,22 +376,40 @@ public class AuthService {
         if (user.isEmailVerified())
             throw new BadRequestException("Email is already verified", "AUTH_ALREADY_VERIFIED");
 
-        EmailVerificationToken token = emailVerificationTokenRepository
-                .findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
-                .orElseThrow(() -> new BadRequestException("No verification code found. Please request a new one.", "AUTH_INVALID_CODE"));
+        // 1. Try to verify using email token first
+        boolean emailCodeValid = false;
+        var tokenOpt = emailVerificationTokenRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user);
+        if (tokenOpt.isPresent()) {
+            var token = tokenOpt.get();
+            if (!token.isExpired() && token.getAttempts() < MAX_VERIFICATION_ATTEMPTS && token.getCode().equals(request.getCode())) {
+                emailCodeValid = true;
+                return completeEmailVerification(token);
+            }
+        }
 
-        if (token.isExpired())
-            throw new BadRequestException("Verification code has expired. Please request a new one.", "AUTH_CODE_EXPIRED");
-        if (token.getAttempts() >= MAX_VERIFICATION_ATTEMPTS)
-            throw new BadRequestException("Too many failed attempts. Please request a new verification code.", "AUTH_TOO_MANY_ATTEMPTS");
-        if (!token.getCode().equals(request.getCode())) {
+        // 2. Try to verify using Twilio phone OTP if present
+        if (!emailCodeValid && user.getPhone() != null && !user.getPhone().isBlank()) {
+            boolean phoneCodeValid = twilioService.checkVerificationCode(user.getPhone(), request.getCode());
+            if (phoneCodeValid) {
+                user.setEmailVerified(true);
+                user.setEmailVerifiedAt(LocalDateTime.now());
+                user = userRepository.save(user);
+                emailVerificationTokenRepository.invalidateAllTokensForUser(user);
+                log.info("Email verified successfully via Phone OTP for user: {}", user.getEmail());
+                return userMapper.toResponse(user);
+            }
+        }
+
+        // 3. Fallback logic for error handling and attempt counting
+        if (tokenOpt.isPresent()) {
+            var token = tokenOpt.get();
             token.incrementAttempts();
             emailVerificationTokenRepository.save(token);
             int remaining = MAX_VERIFICATION_ATTEMPTS - token.getAttempts();
             throw new BadRequestException("Invalid verification code. " + remaining + " attempt(s) remaining.", "AUTH_INVALID_CODE");
         }
 
-        return completeEmailVerification(token);
+        throw new BadRequestException("Invalid verification code", "AUTH_INVALID_CODE");
     }
 
     @Transactional
@@ -406,6 +441,14 @@ public class AuthService {
         if (user.isEmailVerified())
             throw new BadRequestException("Email is already verified", "AUTH_ALREADY_VERIFIED");
         generateAndSendVerificationCode(user);
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            try {
+                twilioService.sendVerificationCode(user.getPhone());
+                log.info("Signup OTP resent via SMS to: {}", user.getPhone());
+            } catch (Exception e) {
+                log.error("Failed to resend signup OTP via SMS to " + user.getPhone(), e);
+            }
+        }
         log.info("Verification code resent to: {}", user.getEmail());
     }
 
@@ -650,7 +693,7 @@ public class AuthService {
     private boolean isProfessionalRole(String role) {
         if (role == null) return false;
         return switch (role.trim().toLowerCase()) {
-            case "professional", "agent" -> true;
+            case "professional", "agent", "vendor" -> true;
             default -> false;
         };
     }
@@ -713,7 +756,7 @@ public class AuthService {
         if (request.getTimezone() != null) user.setTimezone(request.getTimezone().isBlank() ? null : request.getTimezone());
         
         // Sync redundant fields on User entity if it's a professional
-        if (user.isProfessional()) {
+        if (user.isProfessional() || user.isVendor()) {
             if (request.getCompanyName() != null) user.setAgencyName(request.getCompanyName());
             if (request.getLicenseNumber() != null) user.setRecoLicenseNumber(request.getLicenseNumber());
         }
@@ -721,7 +764,11 @@ public class AuthService {
         user = userRepository.save(user);
 
         // Update VendorProfile entity if it exists
-        if (user.isProfessional()) {
+        if (user.isProfessional() || user.isVendor()) {
+            if (user.isVendor() && !user.isProfessional()) {
+                user.setProfessional(true);
+                user = userRepository.save(user);
+            }
             vendorProfileRepository.findById(userId).ifPresent(profile -> {
                 if (request.getCompanyName() != null) profile.setCompanyName(request.getCompanyName());
                 if (request.getLicenseNumber() != null) profile.setBusinessLicense(request.getLicenseNumber());
@@ -752,7 +799,7 @@ public class AuthService {
 
     private UserResponse toUserResponseWithProfessionalProfile(User user) {
         UserResponse response = userMapper.toResponse(user);
-        if (user.isProfessional()) {
+        if (user.isProfessional() || user.isVendor()) {
             vendorProfileRepository.findByUser(user)
                     .ifPresent(profile -> {
                         response.setCompanyLogo(profile.getCompanyLogo());
