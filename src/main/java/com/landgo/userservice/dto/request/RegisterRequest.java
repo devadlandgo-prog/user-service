@@ -10,7 +10,10 @@ public class RegisterRequest {
     @NotBlank(message = "Email is required") @Email private String email;
     @NotBlank(message = "Role is required (buyer, seller, professional, admin)") private String role;
     @NotBlank(message = "Password is required") @Size(min = 8) private String password;
-    @NotBlank(message = "Phone is required") private String phone;
+    @NotBlank(message = "Phone is required")
+    @Size(max = 20, message = "Phone number must not exceed 20 characters")
+    @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Invalid phone number format. Must be a valid E.164 phone number (e.g. +14165550199)")
+    private String phone;
     @Size(max = 200) private String agencyName;
     @Size(max = 50) private String licenseNumber;
     @Builder.Default private AuthProvider authProvider = AuthProvider.EMAIL;

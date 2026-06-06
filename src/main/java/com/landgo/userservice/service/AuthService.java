@@ -587,7 +587,7 @@ public class AuthService {
     public UserResponse getUserById(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return userMapper.toResponse(user);
+        return toUserResponseWithProfessionalProfile(user);
     }
 
     @Transactional

@@ -187,6 +187,7 @@ public class ProfessionalController {
     }
 
     @GetMapping("/me/dashboard")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my professional dashboard")
     public ResponseEntity<ApiResponse<UserResponse>> getMyDashboard(@CurrentUser UserPrincipal userPrincipal) {
         UserResponse user = authService.getCurrentUser(userPrincipal);

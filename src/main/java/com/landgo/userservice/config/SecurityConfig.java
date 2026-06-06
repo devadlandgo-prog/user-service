@@ -40,6 +40,11 @@ public class SecurityConfig {
                 .requestMatchers("/internal/**").permitAll()
                 .requestMatchers("/professionals/**").permitAll()
                 .anyRequest().authenticated())
+            .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                response.setContentType("application/json");
+                response.setStatus(401);
+                response.getWriter().write("{\"success\":false,\"message\":\"" + authException.getMessage() + "\",\"code\":\"UNAUTHORIZED\"}");
+            }))
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

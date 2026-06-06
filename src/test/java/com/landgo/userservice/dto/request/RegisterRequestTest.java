@@ -29,7 +29,7 @@ public class RegisterRequestTest {
                 .email("john@example.com")
                 .password("password123")
                 .role("buyer")
-                .phone("+1-416-555-0100")
+                .phone("+14165550100")
                 .build();
 
         Set<ConstraintViolation<RegisterRequest>> violations = validator.validate(request);

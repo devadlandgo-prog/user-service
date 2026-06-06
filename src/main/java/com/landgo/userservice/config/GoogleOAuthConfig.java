@@ -28,7 +28,7 @@ public class GoogleOAuthConfig {
     private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     @Bean
-    @ConditionalOnExpression("'${app.oauth2.google.client-id:}' != ''")
+    @ConditionalOnExpression("'${app.oauth2.google.client-id:}' != '' || '${app.oauth2.google.web-client-id:}' != '' || '${app.oauth2.google.android-client-id:}' != '' || '${app.oauth2.google.ios-client-id:}' != '' || '${app.oauth2.google.secret-name:}' != ''")
     public GoogleTokenVerifier googleTokenVerifier(GoogleOAuthProperties properties,
                                                    ObjectProvider<SecretsManagerService> secretsManagerServiceProvider)
             throws GeneralSecurityException, IOException {
