@@ -147,7 +147,8 @@ public class AuthService {
             throw new BadRequestException("Email address is not verified. Please verify your email first.", "AUTH_EMAIL_NOT_VERIFIED");
         }
         
-        if (user.isMfaEnabled()) {
+        /*
+        if (user.isMfaEnabled()) { // MFA temporarily disabled
             log.info("MFA required for user: {}", user.getEmail());
             mfaService.initiateMfa(user);
             String mfaSession = tokenProvider.generateMfaToken(user.getId());
@@ -157,6 +158,7 @@ public class AuthService {
                     .user(userMapper.toResponse(user))
                     .build();
         }
+        */
 
         return generateAuthResponse(user);
     }
@@ -193,7 +195,8 @@ public class AuthService {
 
         log.info("OAuth2 login successful for: {}", user.getEmail());
         
-        if (user.isMfaEnabled()) {
+        /*
+        if (user.isMfaEnabled()) { // MFA temporarily disabled
             log.info("MFA required for user: {}", user.getEmail());
             mfaService.initiateMfa(user);
             String mfaSession = tokenProvider.generateMfaToken(user.getId());
@@ -203,6 +206,7 @@ public class AuthService {
                     .user(userMapper.toResponse(user))
                     .build();
         }
+        */
 
         return generateAuthResponse(user);
     }
