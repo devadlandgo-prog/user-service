@@ -39,6 +39,7 @@ public class VendorService {
     private final UserRepository userRepository;
     private final VendorProfileMapper vendorProfileMapper;
     private final PasswordEncoder passwordEncoder;
+    private final S3PresignerService s3PresignerService;
 
     @Transactional
     public void incrementViewCount(UUID profileId) {
@@ -79,7 +80,7 @@ public class VendorService {
 
             VendorProfile saved = vendorProfileRepository.save(profile);
             log.info("Professional profile created for existing user: {}", user.getId());
-            return vendorProfileMapper.toResponse(saved);
+            return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
         }
 
         if (!StringUtils.hasText(request.getEmail())) {
@@ -137,7 +138,7 @@ public class VendorService {
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional profile created for user: {}", user.getId());
 
-        return vendorProfileMapper.toResponse(saved);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
 
     @Transactional
@@ -157,7 +158,7 @@ public class VendorService {
 
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Vendor profile created for user: {}", userId);
-        return vendorProfileMapper.toResponse(saved);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
 
     @Transactional(readOnly = true)
@@ -166,7 +167,7 @@ public class VendorService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         VendorProfile profile = vendorProfileRepository.findByUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "userId", userId));
-        return vendorProfileMapper.toResponse(profile);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(profile));
     }
 
     @Transactional(readOnly = true)
@@ -176,6 +177,7 @@ public class VendorService {
                 .or(() -> userRepository.findById(identifier)
                         .flatMap(vendorProfileRepository::findByUser)
                         .map(vendorProfileMapper::toResponse))
+                .map(this::enrichVendorResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", identifier));
     }
 
@@ -186,32 +188,56 @@ public class VendorService {
         VendorProfile profile = vendorProfileRepository.findByUser(user)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "userId", userId));
 
-        profile.setCompanyName(request.getCompanyName());
-        profile.setCompanyDescription(request.getCompanyDescription());
-        profile.setCompanyLogo(request.getCompanyLogo());
-        profile.setBusinessLicense(request.getBusinessLicense());
-        profile.setBusinessAddress(request.getBusinessAddress());
-        profile.setBusinessCity(request.getBusinessCity());
-        profile.setBusinessState(request.getBusinessState());
-        profile.setBusinessZipCode(request.getBusinessZipCode());
-        profile.setBusinessCountry(request.getBusinessCountry());
-        profile.setWebsite(request.getWebsite());
-        profile.setPhoneNumber(request.getPhoneNumber());
+        if (request.getCompanyName() != null) {
+            profile.setCompanyName(request.getCompanyName());
+        }
+        if (request.getCompanyDescription() != null) {
+            profile.setCompanyDescription(request.getCompanyDescription());
+        }
+        if (request.getCompanyLogo() != null) {
+            profile.setCompanyLogo(request.getCompanyLogo().isBlank() ? null : request.getCompanyLogo());
+        }
+        if (request.getBusinessLicense() != null) {
+            profile.setBusinessLicense(request.getBusinessLicense());
+        }
+        if (request.getBusinessAddress() != null) {
+            profile.setBusinessAddress(request.getBusinessAddress());
+        }
+        if (request.getBusinessCity() != null) {
+            profile.setBusinessCity(request.getBusinessCity());
+        }
+        if (request.getBusinessState() != null) {
+            profile.setBusinessState(request.getBusinessState());
+        }
+        if (request.getBusinessZipCode() != null) {
+            profile.setBusinessZipCode(request.getBusinessZipCode());
+        }
+        if (request.getBusinessCountry() != null) {
+            profile.setBusinessCountry(request.getBusinessCountry());
+        }
+        if (request.getWebsite() != null) {
+            profile.setWebsite(request.getWebsite());
+        }
+        if (request.getPhoneNumber() != null) {
+            profile.setPhoneNumber(request.getPhoneNumber());
+        }
         if (request.getCertifications() != null) {
             profile.setCertifications(mapCertifications(request.getCertifications()));
         }
 
         VendorProfile updated = vendorProfileRepository.save(profile);
         log.info("Vendor profile updated for user: {}", userId);
-        return vendorProfileMapper.toResponse(updated);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(updated));
     }
 
     @Transactional(readOnly = true)
     public Map<UUID, VendorResponse> getVendorProfilesBatch(List<UUID> userIds) {
         return vendorProfileRepository.findAllByIdIn(userIds).stream()
+                .map(vendorProfileMapper::toResponse)
+                .map(this::enrichVendorResponse)
                 .collect(Collectors.toMap(
-                        vp -> vp.getUser().getId(),
-                        vendorProfileMapper::toResponse
+                        vp -> vp.getUserId(),
+                        vp -> vp
                 ));
     }
 
@@ -219,7 +245,7 @@ public class VendorService {
     public VendorResponse getVendorProfileById(@NonNull UUID vendorId) {
         VendorProfile profile = vendorProfileRepository.findById(vendorId)
                 .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "id", vendorId));
-        return vendorProfileMapper.toResponse(profile);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(profile));
     }
 
     @Transactional
@@ -240,7 +266,7 @@ public class VendorService {
 
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional verification updated for user: {} to {}", userId, status);
-        return vendorProfileMapper.toResponse(saved);
+        return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
 
     @Transactional(readOnly = true)
@@ -251,45 +277,60 @@ public class VendorService {
                 .findFirst()
                 .map(org.springframework.data.domain.Sort.Order::getProperty)
                 .orElse("createdAt");
+        String sortDir = pageable.getSort().stream()
+                .findFirst()
+                .map(order -> order.getDirection().name().toLowerCase())
+                .orElse("desc");
 
-        if (specialization == null || specialization.isBlank()) {
-            org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
-                case "rating" -> vendorProfileRepository.findByVerifiedTrueOrderByRatingDesc(pageOnly);
-                case "totalReviews" -> vendorProfileRepository.findByVerifiedTrueOrderByTotalReviewsDesc(pageOnly);
-                case "yearsOfExperience" -> vendorProfileRepository.findByVerifiedTrueOrderByYearsOfExperienceDesc(pageOnly);
-                default -> vendorProfileRepository.findByVerifiedTrueOrderByCreatedAtDesc(pageOnly);
-            };
-            return page
-                    .map(vendorProfileMapper::toResponse);
-        }
-        org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
-            case "rating" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByRatingDesc(specialization, pageOnly);
-            case "totalReviews" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByTotalReviewsDesc(specialization, pageOnly);
-            case "yearsOfExperience" -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByYearsOfExperienceDesc(specialization, pageOnly);
-            default -> vendorProfileRepository.findByVerifiedTrueAndSpecializationOrderByCreatedAtDesc(specialization, pageOnly);
-        };
-        return page
-                .map(vendorProfileMapper::toResponse);
+        org.springframework.data.domain.Page<VendorProfile> page = vendorProfileRepository.findVerifiedProfessionals(
+                specialization, sortKey, sortDir, pageOnly);
+        return page.map(vendorProfileMapper::toResponse).map(this::enrichVendorResponse);
     }
     
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<VendorResponse> searchProfessionals(String q, org.springframework.data.domain.Pageable pageable) {
+        return searchProfessionals(q, null, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<VendorResponse> searchProfessionals(String q, String specialization, org.springframework.data.domain.Pageable pageable) {
         org.springframework.data.domain.Pageable pageOnly = org.springframework.data.domain.PageRequest.of(
                 pageable.getPageNumber(), pageable.getPageSize());
         String sortKey = pageable.getSort().stream()
                 .findFirst()
                 .map(org.springframework.data.domain.Sort.Order::getProperty)
                 .orElse("createdAt");
+        String sortDir = pageable.getSort().stream()
+                .findFirst()
+                .map(order -> order.getDirection().name().toLowerCase())
+                .orElse("desc");
 
-        org.springframework.data.domain.Page<VendorProfile> page = switch (sortKey) {
-            case "rating" -> vendorProfileRepository.searchProfessionalsOrderByRatingDesc(q, pageOnly);
-            case "totalReviews" -> vendorProfileRepository.searchProfessionalsOrderByTotalReviewsDesc(q, pageOnly);
-            case "yearsOfExperience" -> vendorProfileRepository.searchProfessionalsOrderByYearsOfExperienceDesc(q, pageOnly);
-            default -> vendorProfileRepository.searchProfessionalsOrderByCreatedAtDesc(q, pageOnly);
-        };
+        org.springframework.data.domain.Page<VendorProfile> page = vendorProfileRepository.searchProfessionalsCombined(
+                q, specialization, sortKey, sortDir, pageOnly);
 
-        return page
-                .map(vendorProfileMapper::toResponse);
+        return page.map(vendorProfileMapper::toResponse).map(this::enrichVendorResponse);
+    }
+
+    private VendorResponse enrichVendorResponse(VendorResponse response) {
+        if (response == null) {
+            return null;
+        }
+        String logo = response.getCompanyLogo();
+        if (logo != null && !logo.isBlank()) {
+            if (!logo.startsWith("http://") && !logo.startsWith("https://")) {
+                try {
+                    int expiryMinutes = 24 * 60; // 24 hours
+                    String signedUrl = s3PresignerService.generatePresignedReadUrl(logo, expiryMinutes);
+                    response.setCompanyLogoUrl(signedUrl);
+                    response.setCompanyLogoExpiresAt(java.time.LocalDateTime.now().plusHours(24));
+                } catch (Exception e) {
+                    log.error("Failed to generate presigned URL for company logo: {}", logo, e);
+                }
+            } else {
+                response.setCompanyLogoUrl(logo);
+            }
+        }
+        return response;
     }
 
     private List<VendorCertification> mapCertifications(List<CertificationRequest> certifications) {

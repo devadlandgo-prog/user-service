@@ -61,6 +61,7 @@ public class AuthService {
     private final MfaService mfaService;
     private final LoginAuditService loginAuditService;
     private final VendorProfileRepository vendorProfileRepository;
+    private final S3PresignerService s3PresignerService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -833,6 +834,20 @@ public class AuthService {
             vendorProfileRepository.findByUser(user)
                     .ifPresent(profile -> {
                         response.setCompanyLogo(profile.getCompanyLogo());
+                        String logo = profile.getCompanyLogo();
+                        if (logo != null && !logo.isBlank()) {
+                            if (!logo.startsWith("http://") && !logo.startsWith("https://")) {
+                                try {
+                                    String signedUrl = s3PresignerService.generatePresignedReadUrl(logo, 24 * 60);
+                                    response.setCompanyLogoUrl(signedUrl);
+                                    response.setCompanyLogoExpiresAt(LocalDateTime.now().plusHours(24));
+                                } catch (Exception e) {
+                                    log.error("Failed to generate presigned URL for user response logo: {}", logo, e);
+                                }
+                            } else {
+                                response.setCompanyLogoUrl(logo);
+                            }
+                        }
                         response.setSpecialization(profile.getSpecialization());
                         response.setYearsOfExperience(profile.getYearsOfExperience());
                         response.setServiceArea(profile.getServiceArea());

@@ -34,6 +34,9 @@ public class VendorResponse {
     private java.util.List<CertificationResponse> certifications;
     private String phoneNumber;
 
+    private String companyLogoUrl;
+    private java.time.LocalDateTime companyLogoExpiresAt;
+
     private String ownerName;
     private String ownerEmail;
     private LocalDateTime createdAt;

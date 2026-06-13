@@ -26,6 +26,8 @@ public class UserResponse {
     private boolean active;
     private String agencyName;
     private String companyLogo;
+    private String companyLogoUrl;
+    private java.time.LocalDateTime companyLogoExpiresAt;
     private java.util.List<String> specialization;
     private Integer yearsOfExperience;
     private java.util.List<String> serviceArea;

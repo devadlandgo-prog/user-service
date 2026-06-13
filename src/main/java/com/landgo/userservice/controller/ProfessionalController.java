@@ -49,15 +49,12 @@ public class ProfessionalController {
         List<String> options = expertiseService.getAllExpertise(true).stream()
                 .map(Expertise::getName)
                 .filter(name -> name != null && !name.isBlank())
-                .map(String::trim)
+                .map(name -> name.trim().replaceAll("[\\s-]+", "_").replaceAll("[^a-zA-Z0-9_]", "").toUpperCase())
+                .distinct()
                 .collect(java.util.stream.Collectors.collectingAndThen(
-                        java.util.stream.Collectors.toMap(
-                                name -> name.toLowerCase(),
-                                name -> name,
-                                (existing, replacement) -> existing,
-                                java.util.LinkedHashMap::new),
-                        map -> {
-                            java.util.List<String> result = new java.util.ArrayList<>(map.values());
+                        java.util.stream.Collectors.toList(),
+                        list -> {
+                            java.util.List<String> result = new java.util.ArrayList<>(list);
                             if (result.stream().noneMatch(name -> "CONTRACTOR".equalsIgnoreCase(name))) {
                                 result.add("CONTRACTOR");
                             }
@@ -114,8 +111,8 @@ public class ProfessionalController {
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
                 case "rating" -> Sort.by(new Sort.Order(direction, "rating").nullsLast());
-                case "most_reviews" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
-                case "most_experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
+                case "most_reviews", "review" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
+                case "most_experience", "experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
                 case "newest" -> Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
                 default -> sort;
             };
@@ -141,6 +138,7 @@ public class ProfessionalController {
     @Operation(summary = "Search professionals")
     public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> searchProfessionals(
             @RequestParam String q,
+            @RequestParam(required = false) String specialization,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
@@ -151,15 +149,16 @@ public class ProfessionalController {
         if (sortBy != null) {
             sort = switch (sortBy.toLowerCase()) {
                 case "rating" -> Sort.by(new Sort.Order(direction, "rating").nullsLast());
-                case "most_reviews" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
-                case "most_experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
+                case "most_reviews", "review" -> Sort.by(new Sort.Order(direction, "totalReviews").nullsLast());
+                case "most_experience", "experience" -> Sort.by(new Sort.Order(direction, "yearsOfExperience").nullsLast());
+                case "newest" -> Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
                 default -> sort;
             };
         } else {
             sort = Sort.by(new Sort.Order(direction, "createdAt").nullsLast());
         }
 
-        Page<VendorResponse> professionals = vendorService.searchProfessionals(q,
+        Page<VendorResponse> professionals = vendorService.searchProfessionals(q, specialization,
                 PageRequest.of(page, size, sort));
         PageResponse<VendorResponse> response = PageResponse.<VendorResponse>builder()
                 .content(professionals.getContent())
