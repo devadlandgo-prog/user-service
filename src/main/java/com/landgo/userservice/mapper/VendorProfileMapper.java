@@ -35,6 +35,7 @@ public interface VendorProfileMapper {
     @Mapping(target = "totalListings", ignore = true)
     @Mapping(target = "totalSold", ignore = true)
     @Mapping(target = "viewCount", ignore = true)
+    @Mapping(target = "totalCalls", ignore = true)
     VendorProfile toEntity(VendorProfileRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -64,6 +65,7 @@ public interface VendorProfileMapper {
     @Mapping(target = "totalListings", ignore = true)
     @Mapping(target = "totalSold", ignore = true)
     @Mapping(target = "viewCount", ignore = true)
+    @Mapping(target = "totalCalls", ignore = true)
     VendorProfile toEntity(ProfessionalRegisterRequest request);
 
     VendorCertification toEntity(CertificationRequest request);

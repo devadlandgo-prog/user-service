@@ -62,6 +62,7 @@ public class AuthService {
     private final LoginAuditService loginAuditService;
     private final VendorProfileRepository vendorProfileRepository;
     private final S3PresignerService s3PresignerService;
+    private final PaymentServiceClient paymentServiceClient;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -175,8 +176,18 @@ public class AuthService {
         } else {
             log.info("OAuth2 login requested via {}", request.getAuthProvider());
         }
-        OAuth2AuthenticationStrategy strategy = oAuth2StrategyFactory.getStrategy(request.getAuthProvider());
-        OAuth2UserInfo userInfo = strategy.extractUserInfo(request.getToken());
+
+        OAuth2AuthenticationStrategy strategy;
+        OAuth2UserInfo userInfo;
+        try {
+            strategy = oAuth2StrategyFactory.getStrategy(request.getAuthProvider());
+            userInfo = strategy.extractUserInfo(request.getToken());
+        } catch (ConflictException | BadRequestException e) {
+            throw e; // re-throw structured errors as-is
+        } catch (Exception e) {
+            log.warn("OAuth2 token verification failed for provider {}: {}", request.getAuthProvider(), e.getMessage());
+            throw new BadRequestException("OAuth2 authentication failed: " + e.getMessage(), "AUTH_OAUTH2_FAILURE");
+        }
 
         User user = userRepository.findByProviderIdAndAuthProvider(
                 userInfo.getProviderId(), request.getAuthProvider())
@@ -195,19 +206,6 @@ public class AuthService {
                 });
 
         log.info("OAuth2 login successful for: {}", user.getEmail());
-        
-        /*
-        if (user.isMfaEnabled()) { // MFA temporarily disabled
-            log.info("MFA required for user: {}", user.getEmail());
-            mfaService.initiateMfa(user);
-            String mfaSession = tokenProvider.generateMfaToken(user.getId());
-            return AuthResponse.builder()
-                    .mfaRequired(true)
-                    .mfaSession(mfaSession)
-                    .user(userMapper.toResponse(user))
-                    .build();
-        }
-        */
 
         return generateAuthResponse(user);
     }
@@ -308,6 +306,12 @@ public class AuthService {
     public UserResponse updateProfile(UserPrincipal userPrincipal, UpdateProfileRequest request) {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        boolean hasActiveSub = paymentServiceClient.hasActiveSubscription(user.getId(), "market_profession");
+        if (hasActiveSub && !user.isProfessional()) {
+            user.setProfessional(true);
+            user = userRepository.save(user);
+        }
 
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             user.setFullName(request.getFullName());
@@ -829,6 +833,11 @@ public class AuthService {
     }
 
     private UserResponse toUserResponseWithProfessionalProfile(User user) {
+        boolean hasActiveSub = paymentServiceClient.hasActiveSubscription(user.getId(), "market_profession");
+        if (hasActiveSub && !user.isProfessional()) {
+            user.setProfessional(true);
+            user = userRepository.save(user);
+        }
         UserResponse response = userMapper.toResponse(user);
         if (user.isProfessional()) {
             vendorProfileRepository.findByUser(user)

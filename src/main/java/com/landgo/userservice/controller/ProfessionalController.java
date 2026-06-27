@@ -137,7 +137,7 @@ public class ProfessionalController {
     @GetMapping("/search")
     @Operation(summary = "Search professionals")
     public ResponseEntity<ApiResponse<PageResponse<VendorResponse>>> searchProfessionals(
-            @RequestParam String q,
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String specialization,
             @RequestParam(required = false) String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
@@ -182,6 +182,9 @@ public class ProfessionalController {
             throw new BadRequestException("Invalid professional id format", "VALIDATION_ERROR");
         }
         VendorResponse vendor = vendorService.getVendorProfileResolved(identifier);
+        if (vendor.getSubscriptionActive() != null && !vendor.getSubscriptionActive()) {
+            throw new com.landgo.userservice.exception.ResourceNotFoundException("ProfessionalProfile", "id", identifier);
+        }
         return ResponseEntity.ok(ApiResponse.success(vendor));
     }
 
@@ -267,5 +270,12 @@ public class ProfessionalController {
     public ResponseEntity<ApiResponse<Void>> incrementProfileView(@PathVariable UUID id) {
         vendorService.incrementViewCount(id);
         return ResponseEntity.ok(ApiResponse.success("Profile view count incremented", null));
+    }
+
+    @PostMapping("/{id}/call")
+    @Operation(summary = "Increment professional call count", description = "Called when a user taps the Call button on a professional profile.")
+    public ResponseEntity<ApiResponse<Void>> incrementCallCount(@PathVariable UUID id) {
+        vendorService.incrementCallCount(id);
+        return ResponseEntity.ok(ApiResponse.success("Call count incremented", null));
     }
 }

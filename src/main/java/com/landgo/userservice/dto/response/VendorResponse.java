@@ -41,4 +41,9 @@ public class VendorResponse {
     private String ownerEmail;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private Boolean subscriptionActive;
+    private Boolean marketplaceVisible;
+    private Integer totalCalls;
+    private String planTier;
 }

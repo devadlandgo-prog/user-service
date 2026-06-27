@@ -40,11 +40,18 @@ public class VendorService {
     private final VendorProfileMapper vendorProfileMapper;
     private final PasswordEncoder passwordEncoder;
     private final S3PresignerService s3PresignerService;
+    private final PaymentServiceClient paymentServiceClient;
 
     @Transactional
     public void incrementViewCount(UUID profileId) {
         vendorProfileRepository.incrementViewCount(profileId);
         log.debug("Incremented view count for profile: {}", profileId);
+    }
+
+    @Transactional
+    public void incrementCallCount(UUID profileId) {
+        vendorProfileRepository.incrementCallCount(profileId);
+        log.debug("Incremented call count for profile: {}", profileId);
     }
 
     @Transactional
@@ -315,6 +322,19 @@ public class VendorService {
         if (response == null) {
             return null;
         }
+        
+        boolean active = paymentServiceClient.hasActiveSubscription(response.getUserId(), "market_profession");
+        response.setSubscriptionActive(active);
+        response.setMarketplaceVisible(active);
+
+        // Populate planTier from active land_listing subscription (B-CON-03)
+        try {
+            String planTier = paymentServiceClient.getActivePlanTier(response.getUserId(), "market_profession");
+            response.setPlanTier(planTier);
+        } catch (Exception e) {
+            log.debug("Could not fetch planTier for vendor {}: {}", response.getUserId(), e.getMessage());
+        }
+
         String logo = response.getCompanyLogo();
         if (logo != null && !logo.isBlank()) {
             if (!logo.startsWith("http://") && !logo.startsWith("https://")) {

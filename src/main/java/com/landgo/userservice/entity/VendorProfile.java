@@ -104,4 +104,8 @@ public class VendorProfile extends BaseEntity {
     @Column(name = "view_count")
     @Builder.Default
     private Integer viewCount = 0;
+
+    @Column(name = "total_calls")
+    @Builder.Default
+    private Integer totalCalls = 0;
 }
