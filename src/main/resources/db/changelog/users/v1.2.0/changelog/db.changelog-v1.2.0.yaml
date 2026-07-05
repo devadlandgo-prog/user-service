@@ -3,6 +3,13 @@ databaseChangeLog:
       id: add-total-calls-to-vendor-profiles
       author: backend-team
       changes:
+          - sqlFile:
+              path: ../ddl/001_add_total_calls.sql
+              relativeToChangelogFile: true
+  - changeSet:
+      id: add-push-notifications-tables
+      author: backend-team
+      changes:
         - sqlFile:
-            path: ../ddl/001_add_total_calls.sql
+            path: ../ddl/002_push_notifications.sql
             relativeToChangelogFile: true
