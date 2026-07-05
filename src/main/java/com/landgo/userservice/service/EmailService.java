@@ -91,6 +91,44 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendSubscriptionExpiryEmail(String toEmail, String userName, int daysLeft, String planCategory) {
+        try {
+            String subject = daysLeft == 1 
+                ? "ACTION REQUIRED: Your LandGo subscription expires tomorrow" 
+                : "Reminder: Your LandGo subscription expires in " + daysLeft + " days";
+            String body = """
+                <html><body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
+                <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)">
+                <div style="background:#1B5E20;padding:30px;text-align:center"><h1 style="color:#fff;margin:0">LandGo</h1></div>
+                <div style="padding:40px 30px">
+                <h2 style="color:#333;margin-top:0">Subscription Expiring Soon</h2>
+                <p style="color:#555;line-height:1.6">Hi %s,</p>
+                <p style="color:#555;line-height:1.6">Your LandGo subscription for <strong>%s</strong> is ending in <strong>%d day(s)</strong>.</p>
+                <p style="color:#555;line-height:1.6">Please renew your subscription to maintain active access to all professional features.</p>
+                </div>
+                <div style="background:#f9f9f9;padding:20px 30px;text-align:center;font-size:12px;color:#999"><p>© 2026 LandGo. All rights reserved.</p></div>
+                </div></body></html>
+                """.formatted(escapeHtml(userName), escapeHtml(planCategory), daysLeft);
+
+            sendHtmlEmail(toEmail, subject, body);
+            log.info("Subscription expiry warning email sent to: {} ({} days left)", toEmail, daysLeft);
+        } catch (Exception e) {
+            log.error("Failed to send subscription expiry warning email to: {}", toEmail, e);
+        }
+    }
+
+    @Async
+    public void sendDynamicHtmlEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            log.info("Dynamic email sent successfully to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send dynamic email to: {}", toEmail, e);
+            throw new RuntimeException("Failed to send dynamic email", e);
+        }
+    }
+
     private String buildVerificationEmailHtml(String userName, String code, String verificationUrl) throws IOException {
         ClassPathResource resource = new ClassPathResource(verificationTemplatePath);
         String template = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);

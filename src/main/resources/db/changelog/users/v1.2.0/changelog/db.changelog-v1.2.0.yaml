@@ -13,3 +13,10 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/002_push_notifications.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: add-newsletter-tables
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/003_newsletter.sql
+            relativeToChangelogFile: true

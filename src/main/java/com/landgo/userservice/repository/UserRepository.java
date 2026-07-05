@@ -39,4 +39,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Modifying
     @Query("UPDATE User u SET u.lastLoginAt = :ts WHERE u.id = :id")
     void updateLastLoginAt(@Param("id") UUID id, @Param("ts") LocalDateTime ts);
+
+    @Query(value = "SELECT u.email as email, u.full_name as fullName, s.end_date as endDate, s.plan_category as planCategory " +
+           "FROM users.users u " +
+           "JOIN payments.subscriptions s ON u.id = s.user_id " +
+           "WHERE s.status = 'ACTIVE' " +
+           "AND CAST(s.end_date AS DATE) = CURRENT_DATE + :days", nativeQuery = true)
+    java.util.List<com.landgo.userservice.dto.ExpiringSubscriptionProjection> findUsersWithExpiringSubscriptions(@Param("days") int days);
 }
