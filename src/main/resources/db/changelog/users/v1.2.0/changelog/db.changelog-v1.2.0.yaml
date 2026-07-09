@@ -27,3 +27,11 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/004_add_deleted_to_newsletter.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: add-updated-at-to-newsletter
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/005_add_updated_at_to_newsletter.sql
+            relativeToChangelogFile: true
+
