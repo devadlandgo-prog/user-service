@@ -670,6 +670,7 @@ public class AuthService {
         user = userRepository.save(user);
         emailVerificationTokenRepository.invalidateAllTokensForUser(user);
         log.info("Email verified successfully for user: {}", user.getEmail());
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
         return userMapper.toResponse(user);
     }
 

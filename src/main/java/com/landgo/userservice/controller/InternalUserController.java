@@ -9,6 +9,8 @@ import com.landgo.userservice.dto.response.VendorResponse;
 import com.landgo.userservice.enums.Role;
 import com.landgo.userservice.service.AuthService;
 import com.landgo.userservice.service.VendorService;
+import com.landgo.userservice.service.EmailService;
+import com.landgo.userservice.dto.request.EmailRequest;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +35,13 @@ public class InternalUserController {
 
     private final AuthService authService;
     private final VendorService vendorService;
+    private final EmailService emailService;
+
+    @PostMapping("/email/send")
+    public ResponseEntity<Void> sendEmail(@jakarta.validation.Valid @RequestBody EmailRequest request) {
+        emailService.sendTemplateEmail(request.getToEmail(), request.getSubject(), request.getTemplateName(), request.getVariables());
+        return ResponseEntity.ok().build();
+    }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable UUID userId) {

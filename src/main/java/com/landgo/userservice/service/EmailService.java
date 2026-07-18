@@ -58,9 +58,11 @@ public class EmailService {
     public void sendVerificationEmail(String toEmail, String userName, String code, String verificationToken) {
         try {
             String verificationUrl = verifyLinkBaseUrl + "?token=" + verificationToken;
-            String html = buildVerificationEmailHtml(userName, code, verificationUrl);
-            log.debug("Verification code for {}: {}", toEmail, code);
-            sendHtmlEmail(toEmail, "LandGo - Verify Your Email Address", html);
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", userName);
+            vars.put("verificationCode", code);
+            vars.put("verificationUrl", verificationUrl);
+            sendTemplateEmail(toEmail, "LandGo - Verify Your Email Address", "EmailVerification", vars);
             log.info("Verification email sent to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send verification email to: {}", toEmail, e);
@@ -72,7 +74,11 @@ public class EmailService {
     public void sendPasswordResetEmail(String toEmail, String userName, String token) {
         try {
             String resetLink = resetPasswordBaseUrl + "?token=" + token;
-            sendHtmlEmail(toEmail, "LandGo - Password Reset Request", buildResetEmailHtml(userName, resetLink));
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", userName);
+            vars.put("verificationCode", token);
+            vars.put("resetUrl", resetLink);
+            sendTemplateEmail(toEmail, "LandGo - Password Reset Request", "ForgotPassword", vars);
             log.info("Password reset email sent to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send password reset email to: {}", toEmail, e);
@@ -83,11 +89,27 @@ public class EmailService {
     @Async
     public void sendPasswordResetCodeEmail(String toEmail, String userName, String code) {
         try {
-            sendHtmlEmail(toEmail, "LandGo - Password Reset Verification Code", buildPasswordResetCodeEmailHtml(userName, code));
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", userName);
+            vars.put("verificationCode", code);
+            vars.put("resetUrl", resetPasswordBaseUrl + "?code=" + code);
+            sendTemplateEmail(toEmail, "LandGo - Password Reset Verification Code", "ForgotPassword", vars);
             log.info("Password reset code email sent to: {}", toEmail);
         } catch (Exception e) {
             log.error("Failed to send password reset code email to: {}", toEmail, e);
             throw new RuntimeException("Failed to send password reset code email", e);
+        }
+    }
+
+    @Async
+    public void sendWelcomeEmail(String toEmail, String userName) {
+        try {
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", userName);
+            sendTemplateEmail(toEmail, "Welcome to LandGo!", "WelcomeEmail", vars);
+            log.info("Welcome email sent to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to: {}", toEmail, e);
         }
     }
 
@@ -97,21 +119,11 @@ public class EmailService {
             String subject = daysLeft == 1 
                 ? "ACTION REQUIRED: Your LandGo subscription expires tomorrow" 
                 : "Reminder: Your LandGo subscription expires in " + daysLeft + " days";
-            String body = """
-                <html><body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-                <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)">
-                <div style="background:#1B5E20;padding:30px;text-align:center"><h1 style="color:#fff;margin:0">LandGo</h1></div>
-                <div style="padding:40px 30px">
-                <h2 style="color:#333;margin-top:0">Subscription Expiring Soon</h2>
-                <p style="color:#555;line-height:1.6">Hi %s,</p>
-                <p style="color:#555;line-height:1.6">Your LandGo subscription for <strong>%s</strong> is ending in <strong>%d day(s)</strong>.</p>
-                <p style="color:#555;line-height:1.6">Please renew your subscription to maintain active access to all professional features.</p>
-                </div>
-                <div style="background:#f9f9f9;padding:20px 30px;text-align:center;font-size:12px;color:#999"><p>© 2026 LandGo. All rights reserved.</p></div>
-                </div></body></html>
-                """.formatted(escapeHtml(userName), escapeHtml(planCategory), daysLeft);
-
-            sendHtmlEmail(toEmail, subject, body);
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", userName);
+            vars.put("planName", planCategory);
+            vars.put("daysLeft", String.valueOf(daysLeft));
+            sendTemplateEmail(toEmail, subject, "SubscriptionExpiring", vars);
             log.info("Subscription expiry warning email sent to: {} ({} days left)", toEmail, daysLeft);
         } catch (Exception e) {
             log.error("Failed to send subscription expiry warning email to: {}", toEmail, e);
@@ -129,43 +141,39 @@ public class EmailService {
         }
     }
 
-    private String buildVerificationEmailHtml(String userName, String code, String verificationUrl) throws IOException {
-        ClassPathResource resource = new ClassPathResource(verificationTemplatePath);
+    @Async
+    public void sendTemplateEmail(String toEmail, String subject, String templateName, Map<String, String> variables) {
+        try {
+            String html = buildTemplateEmailHtml(templateName, variables);
+            sendHtmlEmail(toEmail, subject, html);
+        } catch (Exception e) {
+            log.error("Failed to send template email '{}' to: {}", templateName, toEmail, e);
+            throw new RuntimeException("Failed to send template email", e);
+        }
+    }
+
+    private String buildTemplateEmailHtml(String templateName, Map<String, String> variables) throws IOException {
+        String templatePath = "email-templates/" + templateName + ".html";
+        ClassPathResource resource = new ClassPathResource(templatePath);
+        if (!resource.exists()) {
+            throw new IllegalArgumentException("Template file not found: " + templatePath);
+        }
         String template = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        return template
-                .replace("{{logoUrl}}", logoUrl)
-                .replace("{{userName}}", escapeHtml(userName))
-                .replace("{{verificationCode}}", escapeHtml(code))
-                .replace("{{expiryMinutes}}", "15")
-                .replace("{{verificationUrl}}", verificationUrl);
-    }
 
-    private String buildResetEmailHtml(String userName, String resetLink) {
-        return """
-                <html><body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-                <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)">
-                <div style="background:#1B5E20;padding:30px;text-align:center"><h1 style="color:#fff;margin:0">LandGo</h1><p style="color:#C8E6C9;margin:5px 0 0;font-size:14px">Find. Build. Grow.</p></div>
-                <div style="padding:40px 30px"><h2 style="color:#333;margin-top:0">Hi %s,</h2>
-                <p style="color:#555;line-height:1.6">We received a request to reset your password. Click the button below:</p>
-                <p style="text-align:center"><a href="%s" style="display:inline-block;background:#1B5E20;color:#fff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:bold;margin:20px 0">Reset Password</a></p>
-                <div style="background:#FFF3E0;border-left:4px solid #FF9800;padding:12px 16px;margin:20px 0;border-radius:4px"><strong>⏰ This link expires in 30 minutes.</strong></div>
-                <p style="word-break:break-all;font-size:12px;color:#888">%s</p>
-                </div><div style="background:#f9f9f9;padding:20px 30px;text-align:center;font-size:12px;color:#999"><p>© 2026 LandGo. All rights reserved.</p></div></div></body></html>
-                """.formatted(userName, resetLink, resetLink);
-    }
+        // Inject logoUrl
+        template = template.replace("/static/icon.svg", logoUrl);
+        template = template.replace("{{logoUrl}}", logoUrl);
 
-    private String buildPasswordResetCodeEmailHtml(String userName, String code) {
-        return """
-                <html><body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-                <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.1)">
-                <div style="background:#1B5E20;padding:30px;text-align:center"><h1 style="color:#fff;margin:0">LandGo</h1><p style="color:#C8E6C9;margin:5px 0 0;font-size:14px">Find. Build. Grow.</p></div>
-                <div style="padding:40px 30px"><h2 style="color:#333;margin-top:0">Hi %s,</h2>
-                <p style="color:#555;line-height:1.6">Use the verification code below to reset your password in the app:</p>
-                <div style="text-align:center;margin:24px 0"><span style="display:inline-block;background:#E8F5E9;color:#1B5E20;font-size:30px;font-weight:bold;letter-spacing:8px;padding:14px 24px;border-radius:10px">%s</span></div>
-                <div style="background:#FFF3E0;border-left:4px solid #FF9800;padding:12px 16px;margin:20px 0;border-radius:4px"><strong>⏰ This code expires in 15 minutes.</strong></div>
-                <p style="color:#777;line-height:1.6">If you didn’t request this, you can safely ignore this email.</p>
-                </div><div style="background:#f9f9f9;padding:20px 30px;text-align:center;font-size:12px;color:#999"><p>© 2026 LandGo. All rights reserved.</p></div></div></body></html>
-                """.formatted(escapeHtml(userName), escapeHtml(code));
+        if (variables != null) {
+            for (Map.Entry<String, String> entry : variables.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue() != null ? entry.getValue() : "";
+                template = template.replace("<!-- -->" + key + "<!-- -->", value);
+                template = template.replace("{{" + key + "}}", value);
+                template = template.replace("${" + key + "}", value);
+            }
+        }
+        return template;
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {

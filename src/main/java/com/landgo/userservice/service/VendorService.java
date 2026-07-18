@@ -41,6 +41,7 @@ public class VendorService {
     private final PasswordEncoder passwordEncoder;
     private final S3PresignerService s3PresignerService;
     private final PaymentServiceClient paymentServiceClient;
+    private final EmailService emailService;
 
     @Transactional
     public void incrementViewCount(UUID profileId) {
@@ -165,6 +166,13 @@ public class VendorService {
 
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Vendor profile created for user: {}", userId);
+        try {
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", user.getFullName());
+            emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Submitted", "MarketplaceAppSubmitted", vars);
+        } catch (Exception e) {
+            log.error("Failed to send marketplace app submitted email for user {}", userId, e);
+        }
         return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
 
@@ -273,6 +281,18 @@ public class VendorService {
 
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional verification updated for user: {} to {}", userId, status);
+        try {
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("User", user.getFullName());
+            if (status == com.landgo.userservice.enums.VerificationStatus.APPROVED) {
+                emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Approved", "MarketplaceAppReviewed", vars);
+            } else if (status == com.landgo.userservice.enums.VerificationStatus.REJECTED) {
+                vars.put("rejectionReason", notes != null ? notes : "Profile does not meet our guidelines.");
+                emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Rejection Notice", "MarketplaceAppRejected", vars);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send marketplace app reviewed email for user {}", userId, e);
+        }
         return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
 
