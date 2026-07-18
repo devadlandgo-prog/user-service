@@ -16,8 +16,9 @@ public class EmailRequest {
     @NotBlank(message = "Subject is required")
     private String subject;
 
-    @NotBlank(message = "Template name is required")
     private String templateName;
 
     private Map<String, String> variables;
+
+    private String htmlBody;
 }

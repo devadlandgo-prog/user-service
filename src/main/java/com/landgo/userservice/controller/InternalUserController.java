@@ -39,7 +39,11 @@ public class InternalUserController {
 
     @PostMapping("/email/send")
     public ResponseEntity<Void> sendEmail(@jakarta.validation.Valid @RequestBody EmailRequest request) {
-        emailService.sendTemplateEmail(request.getToEmail(), request.getSubject(), request.getTemplateName(), request.getVariables());
+        if (request.getHtmlBody() != null && !request.getHtmlBody().isBlank()) {
+            emailService.sendDynamicHtmlEmail(request.getToEmail(), request.getSubject(), request.getHtmlBody());
+        } else {
+            emailService.sendTemplateEmail(request.getToEmail(), request.getSubject(), request.getTemplateName(), request.getVariables());
+        }
         return ResponseEntity.ok().build();
     }
 
