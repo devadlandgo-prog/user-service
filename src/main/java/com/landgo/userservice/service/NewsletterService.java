@@ -78,9 +78,22 @@ public class NewsletterService {
     public NewsletterCampaign initiatePublish(UUID adminUserId, NewsletterPublishRequest request) {
         List<NewsletterSubscriber> activeSubscribers = subscriberRepository.findByStatus("ACTIVE");
 
+        String htmlBody = request.getHtmlBody();
+        if (htmlBody != null && !htmlBody.isBlank()) {
+            try {
+                byte[] decodedBytes = java.util.Base64.getDecoder().decode(htmlBody.trim());
+                String decoded = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+                if (decoded.contains("<") || decoded.contains(">")) {
+                    htmlBody = decoded;
+                }
+            } catch (IllegalArgumentException e) {
+                // Keep original if not valid base64
+            }
+        }
+
         NewsletterCampaign campaign = NewsletterCampaign.builder()
                 .subject(request.getSubject())
-                .htmlBody(request.getHtmlBody())
+                .htmlBody(htmlBody)
                 .textBody(request.getTextBody())
                 .previewText(request.getPreviewText())
                 .recipientCount(activeSubscribers.size())
