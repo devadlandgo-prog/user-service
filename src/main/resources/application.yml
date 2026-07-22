@@ -112,3 +112,9 @@ logging:
     org.springframework.web: INFO
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
+
+firebase:
+  service-account:
+    base64: ${FIREBASE_SERVICE_ACCOUNT_BASE64:}
+    json: ${FIREBASE_SERVICE_ACCOUNT_JSON:}
+    path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
