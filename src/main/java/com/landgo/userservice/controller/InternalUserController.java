@@ -58,6 +58,11 @@ public class InternalUserController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{userId}/add-listing-credits")
+    public ResponseEntity<UserResponse> addListingCredits(@PathVariable UUID userId, @RequestParam(defaultValue = "1") int credits) {
+        return ResponseEntity.ok(authService.addListingCredits(userId, credits));
+    }
+
     @GetMapping("/{userId}/vendor")
     public ResponseEntity<VendorResponse> getVendorProfile(@PathVariable UUID userId) {
         return ResponseEntity.ok(vendorService.getVendorProfile(userId));

@@ -74,6 +74,17 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean isProfessional = false;
 
+    @Column(name = "max_listings")
+    @Builder.Default
+    private Integer maxListings = 0;
+
+    public void addListingCredits(int credits) {
+        if (this.maxListings == null) {
+            this.maxListings = 0;
+        }
+        this.maxListings += credits;
+    }
+
     public String getFullName() {
         if (fullName != null && !fullName.isBlank())
             return fullName;

@@ -37,6 +37,7 @@ public class UserResponse {
     private boolean mfaEnabled;
     private boolean mfaVerified;
     private String timezone;
+    private Integer maxListings;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

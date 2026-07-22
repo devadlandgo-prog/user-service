@@ -34,4 +34,12 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/005_add_updated_at_to_newsletter.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: add-max-listings-to-users
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/006_add_max_listings.sql
+            relativeToChangelogFile: true
+
 

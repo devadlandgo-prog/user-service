@@ -609,6 +609,16 @@ public class AuthService {
     }
 
     @Transactional
+    public UserResponse addListingCredits(UUID userId, int credits) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.addListingCredits(credits);
+        User saved = userRepository.save(user);
+        log.info("Successfully added {} listing credits to user {}. New maxListings: {}", credits, userId, saved.getMaxListings());
+        return toUserResponseWithProfessionalProfile(saved);
+    }
+
+    @Transactional
     public void deleteAccount(UserPrincipal userPrincipal) {
         User user = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
