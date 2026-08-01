@@ -43,7 +43,7 @@ public class DeviceController {
             description = "Deactivates the supplied token. Pass the token as a query param: ?fcmToken=<token>. Called by LandGo Web on sign-out.")
     public ResponseEntity<ApiResponse<Void>> unregisterDeviceToken(
             @CurrentUser UserPrincipal userDetails,
-            @RequestParam String fcmToken) {
+            @RequestParam(required = false) String fcmToken) {
 
         if (fcmToken == null || fcmToken.isBlank()) {
             throw new com.landgo.userservice.exception.BadRequestException("fcmToken is required", "VALIDATION_ERROR");
