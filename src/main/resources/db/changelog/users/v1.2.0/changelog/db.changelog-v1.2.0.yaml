@@ -41,5 +41,26 @@ databaseChangeLog:
         - sqlFile:
             path: ../ddl/006_add_max_listings.sql
             relativeToChangelogFile: true
+  - changeSet:
+      id: add-push-campaign-delivery-columns
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/007_push_campaign_delivery.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: add-newsletter-delivery-columns
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/008_newsletter_delivery.sql
+            relativeToChangelogFile: true
+  - changeSet:
+      id: add-newsletter-delivery-worker-columns
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/009_newsletter_delivery_worker.sql
+            relativeToChangelogFile: true
 
 

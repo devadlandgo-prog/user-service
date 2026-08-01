@@ -67,6 +67,15 @@ public class PushCampaign {
     @Builder.Default
     private Integer failureCount = 0;
 
+    /** Failure reason surfaced to the admin portal when {@code status} is FAILED. */
+    @Column(name = "error_message", columnDefinition = "TEXT")
+    private String errorMessage;
+
+    /** Times the worker has claimed this campaign; caps retries of stale in-flight jobs. */
+    @Column(name = "attempt_count", nullable = false)
+    @Builder.Default
+    private Integer attemptCount = 0;
+
     @Column(name = "sent_by")
     private UUID sentBy;
 

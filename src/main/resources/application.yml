@@ -49,6 +49,24 @@ app:
     verify-link-url: ${VERIFY_LINK_URL:http://localhost:3000/verify-email}
     logo-url: ${MAIL_LOGO_URL:https://landgo.app/logo_with_tagline.png}
     verification-template: ${VERIFICATION_EMAIL_TEMPLATE:email-templates/verification-email.html}
+  push:
+    worker:
+      # How often the queue is polled. sendNow campaigns must reach a terminal state in seconds.
+      interval-ms: ${PUSH_WORKER_INTERVAL_MS:15000}
+      recovery-interval-ms: ${PUSH_WORKER_RECOVERY_INTERVAL_MS:60000}
+      batch-size: ${PUSH_WORKER_BATCH_SIZE:25}
+      stale-after-minutes: ${PUSH_WORKER_STALE_AFTER_MINUTES:5}
+      max-attempts: ${PUSH_WORKER_MAX_ATTEMPTS:3}
+  newsletter:
+    # Public unsubscribe endpoint linked from the footer of every outbound newsletter.
+    unsubscribe-url: ${NEWSLETTER_UNSUBSCRIBE_URL:https://landgo.ca/newsletter/unsubscribe}
+    worker:
+      interval-ms: ${NEWSLETTER_WORKER_INTERVAL_MS:15000}
+      # Broadcasts are long-running, so stale detection is far more patient than for push.
+      recovery-interval-ms: ${NEWSLETTER_WORKER_RECOVERY_INTERVAL_MS:300000}
+      batch-size: ${NEWSLETTER_WORKER_BATCH_SIZE:1}
+      stale-after-minutes: ${NEWSLETTER_WORKER_STALE_AFTER_MINUTES:30}
+      max-attempts: ${NEWSLETTER_WORKER_MAX_ATTEMPTS:3}
   oauth2:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}

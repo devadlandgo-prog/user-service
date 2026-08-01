@@ -11,6 +11,13 @@ import java.util.UUID;
 @Repository
 public interface NewsletterSubscriberRepository extends JpaRepository<NewsletterSubscriber, UUID> {
     Optional<NewsletterSubscriber> findByEmail(String email);
-    
+
     List<NewsletterSubscriber> findByStatus(String status);
+
+    Optional<NewsletterSubscriber> findByUnsubscribeToken(UUID unsubscribeToken);
+
+    /** Subscribers eligible to receive a newsletter: active and having given consent. */
+    List<NewsletterSubscriber> findByStatusAndConsentTrue(String status);
+
+    long countByStatusAndConsentTrue(String status);
 }

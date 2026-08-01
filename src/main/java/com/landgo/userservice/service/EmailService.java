@@ -48,6 +48,9 @@ public class EmailService {
     @Value("${twilio.sendgrid.api-key:}")
     private String sendGridApiKey;
 
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
     @Value("${twilio.sendgrid.from-email:noreply@landgo.ca}")
     private String sendGridFromEmail;
 
@@ -128,6 +131,33 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Failed to send subscription expiry warning email to: {}", toEmail, e);
         }
+    }
+
+    /**
+     * Sends an HTML email on the calling thread and lets provider failures propagate.
+     *
+     * <p>The {@code @Async} variants below return immediately and swallow the outcome, which is
+     * fine for fire-and-forget transactional mail but makes per-recipient success counting
+     * impossible. Newsletter delivery uses this method so it can report honest counts and
+     * distinguish a real send from a provider rejection.
+     *
+     * @throws RuntimeException when the configured provider rejects or fails the send
+     */
+    public void sendHtmlEmailSync(String toEmail, String subject, String htmlContent) {
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
+
+    /**
+     * Whether an outbound email provider actually has credentials.
+     *
+     * <p>{@code mailSender} is always autoconfigured, so its presence proves nothing — this
+     * checks for a SendGrid API key or SMTP credentials. Used to fail a newsletter publish up
+     * front instead of queueing a broadcast that cannot possibly be delivered.
+     */
+    public boolean isProviderConfigured() {
+        boolean hasSendGrid = sendGridApiKey != null && !sendGridApiKey.isBlank();
+        boolean hasSmtp = smtpUsername != null && !smtpUsername.isBlank();
+        return hasSendGrid || hasSmtp;
     }
 
     @Async

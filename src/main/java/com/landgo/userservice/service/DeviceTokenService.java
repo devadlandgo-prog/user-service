@@ -53,16 +53,20 @@ public class DeviceTokenService {
         return DeviceTokenResponse.builder()
                 .id(token.getId())
                 .userId(token.getUserId())
+                .fcmToken(token.getFcmToken())
                 .platform(token.getPlatform())
+                .deviceType(token.getPlatform())
                 .active(token.isActive())
                 .build();
     }
 
     @Transactional
-    public void unregisterToken(UUID userId, DeviceTokenRequest request) {
-        Optional<UserDeviceToken> existingTokenOpt = userDeviceTokenRepository.findByFcmToken(request.getFcmToken());
+    public void unregisterToken(UUID userId, String fcmToken) {
+        Optional<UserDeviceToken> existingTokenOpt = userDeviceTokenRepository.findByFcmToken(fcmToken);
         if (existingTokenOpt.isPresent()) {
             UserDeviceToken token = existingTokenOpt.get();
+            // Only the owning user may deactivate a token, so a leaked token cannot be used to
+            // silence someone else's notifications.
             if (token.getUserId().equals(userId)) {
                 token.setActive(false);
                 userDeviceTokenRepository.save(token);

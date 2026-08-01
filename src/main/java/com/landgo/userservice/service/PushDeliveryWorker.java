@@ -2,104 +2,76 @@ package com.landgo.userservice.service;
 
 import com.landgo.userservice.entity.PushCampaign;
 import com.landgo.userservice.repository.PushCampaignRepository;
-import com.landgo.userservice.repository.UserDeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Polls for push campaigns awaiting delivery and hands each one to {@link PushCampaignDispatcher}.
+ *
+ * <p>Requires {@code @EnableScheduling} on the application class — without it this bean is
+ * constructed but never invoked, which is why campaigns previously persisted as {@code QUEUED}
+ * and stayed there indefinitely.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PushDeliveryWorker {
 
     private final PushCampaignRepository pushCampaignRepository;
-    private final PushCampaignService pushCampaignService;
-    private final FirebasePushService firebasePushService;
-    private final UserDeviceTokenRepository userDeviceTokenRepository;
+    private final PushCampaignDispatcher dispatcher;
 
-    @Scheduled(fixedDelay = 60000) // Run every minute
-    @Transactional
+    /** Campaigns handled per tick, bounding how long one run can take. */
+    @Value("${app.push.worker.batch-size:25}")
+    private int batchSize;
+
+    /** A campaign in PROCESSING longer than this is treated as abandoned. */
+    @Value("${app.push.worker.stale-after-minutes:5}")
+    private int staleAfterMinutes;
+
+    /** Total delivery attempts before a stuck campaign is marked FAILED. */
+    @Value("${app.push.worker.max-attempts:3}")
+    private int maxAttempts;
+
+    @Scheduled(fixedDelayString = "${app.push.worker.interval-ms:15000}")
     public void processQueuedCampaigns() {
-        List<PushCampaign> queuedCampaigns = pushCampaignRepository.findByStatus("QUEUED");
+        List<PushCampaign> dispatchable = pushCampaignRepository.findDispatchable(
+                LocalDateTime.now(), PageRequest.of(0, batchSize));
 
-        for (PushCampaign campaign : queuedCampaigns) {
-            // Check if it's scheduled for the future
-            if (campaign.getScheduledAt() != null && campaign.getScheduledAt().isAfter(LocalDateTime.now())) {
-                continue; // Not time yet
-            }
+        if (dispatchable.isEmpty()) {
+            return;
+        }
 
-            log.info("Processing push campaign: {}", campaign.getId());
-            campaign.setStatus("SENDING");
-            campaign.setStartedAt(LocalDateTime.now());
-            pushCampaignRepository.save(campaign);
+        log.info("Push delivery worker picked up {} campaign(s)", dispatchable.size());
 
-            try {
-                List<String> tokens = pushCampaignService.resolveTokensForAudience(campaign.getAudience(), campaign.getAudienceFilter());
-                
-                campaign.setTargetedCount(tokens.size());
+        for (PushCampaign campaign : dispatchable) {
+            // Claim and dispatch commit separately so a crash mid-send leaves the campaign in
+            // PROCESSING for the stale sweep to recover, rather than silently back in QUEUED.
+            dispatcher.claim(campaign.getId()).ifPresent(dispatcher::dispatch);
+        }
+    }
 
-                if (tokens.isEmpty()) {
-                    log.info("Campaign {} has 0 targeted tokens. Marking as SENT.", campaign.getId());
-                    campaign.setStatus("SENT");
-                    campaign.setCompletedAt(LocalDateTime.now());
-                    pushCampaignRepository.save(campaign);
-                    continue;
-                }
+    /**
+     * Sweeps campaigns whose worker never finished, so nothing stays in a non-terminal state.
+     */
+    @Scheduled(fixedDelayString = "${app.push.worker.recovery-interval-ms:60000}")
+    public void recoverStaleCampaigns() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(staleAfterMinutes);
+        List<PushCampaign> stale = pushCampaignRepository.findStaleProcessing(cutoff);
 
-                Map<String, String> data = new HashMap<>();
-                if (campaign.getDeepLink() != null) {
-                    data.put("deepLink", campaign.getDeepLink());
-                }
-                data.put("campaignId", campaign.getId().toString());
+        if (stale.isEmpty()) {
+            return;
+        }
 
-                // Firebase allows max 500 tokens per multicast message
-                int successCount = 0;
-                int failureCount = 0;
-
-                for (int i = 0; i < tokens.size(); i += 500) {
-                    List<String> batch = tokens.subList(i, Math.min(tokens.size(), i + 500));
-                    List<String> invalidTokens = firebasePushService.sendMulticastPush(
-                            batch,
-                            campaign.getTitle(),
-                            campaign.getBody(),
-                            campaign.getImageUrl(),
-                            data
-                    );
-
-                    // We assume success = batch.size() - invalidTokens.size() for simplicity here,
-                    // or better, if FirebasePushService returned exact success count it would be ideal.
-                    // For now, any invalid token means failure. Other failures are also possible, 
-                    // but we track known dead tokens to deactivate them.
-                    int failedInBatch = invalidTokens.size(); 
-                    successCount += (batch.size() - failedInBatch);
-                    failureCount += failedInBatch;
-
-                    if (!invalidTokens.isEmpty()) {
-                        userDeviceTokenRepository.deactivateTokens(invalidTokens);
-                        log.info("Deactivated {} invalid tokens from batch", invalidTokens.size());
-                    }
-                }
-
-                campaign.setSuccessCount(successCount);
-                campaign.setFailureCount(failureCount);
-                campaign.setStatus("SENT");
-                campaign.setCompletedAt(LocalDateTime.now());
-                pushCampaignRepository.save(campaign);
-                log.info("Completed push campaign {}: {} successes, {} failures", campaign.getId(), successCount, failureCount);
-
-            } catch (Exception e) {
-                log.error("Failed to process push campaign {}", campaign.getId(), e);
-                campaign.setStatus("FAILED");
-                campaign.setCompletedAt(LocalDateTime.now());
-                pushCampaignRepository.save(campaign);
-            }
+        log.warn("Recovering {} stale push campaign(s) stuck in PROCESSING", stale.size());
+        for (PushCampaign campaign : stale) {
+            dispatcher.recoverStale(campaign.getId(), maxAttempts);
         }
     }
 }

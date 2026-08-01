@@ -19,15 +19,26 @@ public interface UserDeviceTokenRepository extends JpaRepository<UserDeviceToken
     @Query("UPDATE UserDeviceToken t SET t.active = false WHERE t.fcmToken IN :tokens")
     void deactivateTokens(@Param("tokens") List<String> tokens);
 
-    @Query("SELECT t.fcmToken FROM UserDeviceToken t WHERE t.active = true")
-    List<String> findAllActiveTokens();
+    // Audience queries return entities rather than bare token strings because campaign delivery
+    // needs the owning user id to write per-recipient delivery logs.
 
-    @Query("SELECT t.fcmToken FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.userType = 'BUYER'")
-    List<String> findActiveTokensForBuyers();
+    Optional<UserDeviceToken> findByFcmTokenAndActiveTrue(String fcmToken);
 
-    @Query("SELECT t.fcmToken FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.userType = 'SELLER'")
-    List<String> findActiveTokensForSellers();
-    
-    @Query("SELECT t.fcmToken FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.role = 'VENDOR'")
-    List<String> findActiveTokensForVendors();
+    @Query("SELECT t FROM UserDeviceToken t WHERE t.active = true")
+    List<UserDeviceToken> findAllActiveDevices();
+
+    @Query("SELECT t FROM UserDeviceToken t WHERE t.active = true AND upper(t.platform) IN :platforms")
+    List<UserDeviceToken> findActiveDevicesByPlatforms(@Param("platforms") List<String> platforms);
+
+    @Query("SELECT t FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.userType = 'BUYER'")
+    List<UserDeviceToken> findActiveDevicesForBuyers();
+
+    @Query("SELECT t FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.userType = 'SELLER'")
+    List<UserDeviceToken> findActiveDevicesForSellers();
+
+    @Query("SELECT t FROM UserDeviceToken t JOIN User u ON t.userId = u.id WHERE t.active = true AND u.role = 'VENDOR'")
+    List<UserDeviceToken> findActiveDevicesForVendors();
+
+    @Query("SELECT t FROM UserDeviceToken t WHERE t.active = true AND t.userId = :userId")
+    List<UserDeviceToken> findActiveDevicesForUser(@Param("userId") UUID userId);
 }
