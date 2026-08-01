@@ -1,7 +1,6 @@
 package com.landgo.userservice.controller;
 
 import com.landgo.userservice.dto.request.DeviceTokenRequest;
-import com.landgo.userservice.dto.request.DeviceTokenUnregisterRequest;
 import com.landgo.userservice.dto.response.ApiResponse;
 import com.landgo.userservice.dto.response.DeviceTokenResponse;
 import com.landgo.userservice.security.CurrentUser;
@@ -9,7 +8,6 @@ import com.landgo.userservice.security.UserPrincipal;
 import com.landgo.userservice.service.DeviceTokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,12 +39,15 @@ public class DeviceController {
 
     @DeleteMapping("/tokens")
     @Operation(summary = "Unregister an FCM device token",
-            description = "Deactivates the supplied token. Called by LandGo Web on sign-out.")
+            description = "Deactivates the supplied token. Pass the token as a query param: ?fcmToken=<token>. Called by LandGo Web on sign-out.")
     public ResponseEntity<ApiResponse<Void>> unregisterDeviceToken(
             @CurrentUser UserPrincipal userDetails,
-            @Valid @RequestBody DeviceTokenUnregisterRequest request) {
+            @RequestParam String fcmToken) {
 
-        deviceTokenService.unregisterToken(userDetails.getId(), request.getFcmToken());
+        if (fcmToken == null || fcmToken.isBlank()) {
+            throw new com.landgo.userservice.exception.BadRequestException("fcmToken is required", "VALIDATION_ERROR");
+        }
+        deviceTokenService.unregisterToken(userDetails.getId(), fcmToken);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -63,12 +64,14 @@ public class DeviceController {
 
     @DeleteMapping("/me/token")
     @Operation(summary = "Unregister an FCM device token (legacy path)",
-            description = "Equivalent to DELETE /devices/tokens; retained for existing mobile clients.")
+            description = "Equivalent to DELETE /devices/tokens; retained for existing mobile clients. Pass token as ?fcmToken=<token>.")
     public ResponseEntity<ApiResponse<Void>> unregisterToken(
             @CurrentUser UserPrincipal userDetails,
-            @Valid @RequestBody DeviceTokenUnregisterRequest request) {
+            @RequestParam(required = false) String fcmToken) {
 
-        deviceTokenService.unregisterToken(userDetails.getId(), request.getFcmToken());
+        if (fcmToken != null && !fcmToken.isBlank()) {
+            deviceTokenService.unregisterToken(userDetails.getId(), fcmToken);
+        }
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
