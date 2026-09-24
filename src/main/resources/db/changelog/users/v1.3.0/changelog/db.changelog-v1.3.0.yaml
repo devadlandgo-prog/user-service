@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: add-email-deliveries-table
+      author: backend-team
+      changes:
+        - sqlFile:
+            path: ../ddl/001_email_deliveries.sql
+            relativeToChangelogFile: true

@@ -37,14 +37,24 @@ public class InternalUserController {
     private final VendorService vendorService;
     private final EmailService emailService;
 
+    /**
+     * Single outbound mail path for every LandGo service.
+     *
+     * <p>Deduplication lives here rather than in each caller, so a Stripe webhook replay from
+     * payment-service and a retried listing transition from core-service are both covered by one
+     * implementation. Returns 202: the send is queued, and a delivery failure must never fail the
+     * caller's business transaction.
+     */
     @PostMapping("/email/send")
     public ResponseEntity<Void> sendEmail(@jakarta.validation.Valid @RequestBody EmailRequest request) {
         if (request.getHtmlBody() != null && !request.getHtmlBody().isBlank()) {
-            emailService.sendDynamicHtmlEmail(request.getToEmail(), request.getSubject(), request.getHtmlBody());
+            emailService.sendTransactionalHtmlEmail(request.getToEmail(), request.getSubject(),
+                    request.getHtmlBody(), request.getTemplateName(), request.getIdempotencyKey());
         } else {
-            emailService.sendTemplateEmail(request.getToEmail(), request.getSubject(), request.getTemplateName(), request.getVariables());
+            emailService.sendTransactionalTemplateEmail(request.getToEmail(), request.getSubject(),
+                    request.getTemplateName(), request.getVariables(), request.getIdempotencyKey());
         }
-        return ResponseEntity.ok().build();
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/{userId}")
@@ -58,9 +68,29 @@ public class InternalUserController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Legacy incremental grant. Superseded by {@link #setListingCredits}: payment-service's credit
+     * ledger is the authority, and this endpoint could not express a correction or a reversal.
+     *
+     * @deprecated kept so an older payment-service build in flight does not 404
+     */
+    @Deprecated
     @PutMapping("/{userId}/add-listing-credits")
     public ResponseEntity<UserResponse> addListingCredits(@PathVariable UUID userId, @RequestParam(defaultValue = "1") int credits) {
         return ResponseEntity.ok(authService.addListingCredits(userId, credits));
+    }
+
+    /**
+     * Mirrors the authoritative purchased-credit total from payment-service onto the user record.
+     *
+     * <p>A mirror, not a source: listing creation is gated on payment-service's ledger. This
+     * exists so clients still reading {@code maxListings} see the real purchased total instead of
+     * a stale plan-tier cap.
+     */
+    @PutMapping("/{userId}/listing-credits")
+    public ResponseEntity<UserResponse> setListingCredits(
+            @PathVariable UUID userId, @RequestParam int creditsPurchased) {
+        return ResponseEntity.ok(authService.setListingCreditsPurchased(userId, creditsPurchased));
     }
 
     @GetMapping("/{userId}/vendor")

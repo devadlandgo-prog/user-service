@@ -40,10 +40,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("UPDATE User u SET u.lastLoginAt = :ts WHERE u.id = :id")
     void updateLastLoginAt(@Param("id") UUID id, @Param("ts") LocalDateTime ts);
 
+    /**
+     * Subscribers whose paid-through date falls exactly {@code days} from today.
+     *
+     * <p>Excludes land_listing rows: those are one-time credit purchases whose end_date exists
+     * only because the column is NOT NULL. They never expire, so warning about them would be
+     * false. Also excludes subscriptions already set to renew — a renewing plan is not expiring.
+     */
     @Query(value = "SELECT u.email as email, u.full_name as fullName, s.end_date as endDate, s.plan_category as planCategory " +
            "FROM users.users u " +
            "JOIN payments.subscriptions s ON u.id = s.user_id " +
            "WHERE s.status = 'ACTIVE' " +
+           "AND s.auto_renew = false " +
+           "AND LOWER(COALESCE(s.plan_category, '')) <> 'land_listing' " +
            "AND CAST(s.end_date AS DATE) = CURRENT_DATE + :days", nativeQuery = true)
     java.util.List<com.landgo.userservice.dto.ExpiringSubscriptionProjection> findUsersWithExpiringSubscriptions(@Param("days") int days);
 }

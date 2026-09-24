@@ -29,6 +29,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
     private final RestTemplate restTemplate;
+    private final EmailDeliveryLedger deliveryLedger;
 
     @Value("${app.mail.from:noreply@landgo.ca}")
     private String fromEmail;
@@ -45,6 +46,9 @@ public class EmailService {
     @Value("${app.mail.verification-template:email-templates/verification-email.html}")
     private String verificationTemplatePath;
 
+    @Value("${app.mail.dashboard-url:https://landgo.ca/dashboard}")
+    private String dashboardUrl;
+
     @Value("${twilio.sendgrid.api-key:}")
     private String sendGridApiKey;
 
@@ -57,20 +61,24 @@ public class EmailService {
     @Value("${twilio.sendgrid.from-name:LandGo}")
     private String sendGridFromName;
 
+    /**
+     * Sends the account-verification code.
+     *
+     * <p>Deduplicated on the issued token: each new code is a new event and mails, while a retry
+     * of the same issuance does not. The expiry shown in the email is the one actually stored on
+     * the token, so the two cannot drift apart.
+     */
     @Async
-    public void sendVerificationEmail(String toEmail, String userName, String code, String verificationToken) {
-        try {
-            String verificationUrl = verifyLinkBaseUrl + "?token=" + verificationToken;
-            java.util.Map<String, String> vars = new java.util.HashMap<>();
-            vars.put("User", userName);
-            vars.put("verificationCode", code);
-            vars.put("verificationUrl", verificationUrl);
-            sendTemplateEmail(toEmail, "LandGo - Verify Your Email Address", "EmailVerification", vars);
-            log.info("Verification email sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send verification email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send verification email", e);
-        }
+    public void sendVerificationEmail(String toEmail, String userName, String code, String verificationToken,
+                                      int expiryMinutes) {
+        String verificationUrl = verifyLinkBaseUrl + "?token=" + verificationToken;
+        java.util.Map<String, String> vars = new java.util.HashMap<>();
+        vars.put("User", userName);
+        vars.put("verificationCode", code);
+        vars.put("verificationUrl", verificationUrl);
+        vars.put("expiryMinutes", String.valueOf(expiryMinutes));
+        sendTransactionalTemplateEmail(toEmail, "LandGo - Verify Your Email Address", "EmailVerification",
+                vars, "auth.verify:" + verificationToken);
     }
 
     @Async
@@ -89,31 +97,36 @@ public class EmailService {
         }
     }
 
+    /**
+     * Sends a password-reset code.
+     *
+     * <p>Keyed on the code itself, which is regenerated per request: asking for another reset is a
+     * new event and mails again, while a retried delivery of the same issuance does not.
+     */
     @Async
-    public void sendPasswordResetCodeEmail(String toEmail, String userName, String code) {
-        try {
-            java.util.Map<String, String> vars = new java.util.HashMap<>();
-            vars.put("User", userName);
-            vars.put("verificationCode", code);
-            vars.put("resetUrl", resetPasswordBaseUrl + "?code=" + code);
-            sendTemplateEmail(toEmail, "LandGo - Password Reset Verification Code", "ForgotPassword", vars);
-            log.info("Password reset code email sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send password reset code email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send password reset code email", e);
-        }
+    public void sendPasswordResetCodeEmail(String toEmail, String userName, String code, int expiryMinutes) {
+        java.util.Map<String, String> vars = new java.util.HashMap<>();
+        vars.put("User", userName);
+        vars.put("verificationCode", code);
+        vars.put("expiryMinutes", String.valueOf(expiryMinutes));
+        vars.put("resetUrl", resetPasswordBaseUrl + "?code=" + code);
+        sendTransactionalTemplateEmail(toEmail, "LandGo - Password Reset Verification Code", "ForgotPassword",
+                vars, "auth.reset:" + code);
     }
 
+    /**
+     * Welcomes a newly verified account.
+     *
+     * <p>Keyed on the user, so it is sent once per account however many times verification is
+     * replayed — the requirement is "once per account, after verification", not per request.
+     */
     @Async
-    public void sendWelcomeEmail(String toEmail, String userName) {
-        try {
-            java.util.Map<String, String> vars = new java.util.HashMap<>();
-            vars.put("User", userName);
-            sendTemplateEmail(toEmail, "Welcome to LandGo!", "WelcomeEmail", vars);
-            log.info("Welcome email sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send welcome email to: {}", toEmail, e);
-        }
+    public void sendWelcomeEmail(String toEmail, String userName, java.util.UUID userId) {
+        java.util.Map<String, String> vars = new java.util.HashMap<>();
+        vars.put("User", userName);
+        vars.put("dashboardUrl", dashboardUrl);
+        sendTransactionalTemplateEmail(toEmail, "Welcome to LandGo!", "WelcomeEmail", vars,
+                "auth.welcome:" + userId);
     }
 
     @Async
@@ -126,8 +139,11 @@ public class EmailService {
             vars.put("User", userName);
             vars.put("planName", planCategory);
             vars.put("daysLeft", String.valueOf(daysLeft));
-            sendTemplateEmail(toEmail, subject, "SubscriptionExpiring", vars);
-            log.info("Subscription expiry warning email sent to: {} ({} days left)", toEmail, daysLeft);
+            // One warning per recipient, plan and threshold: the job runs daily and must not
+            // re-send the same reminder if it is retried or the window is re-scanned.
+            sendTransactionalTemplateEmail(toEmail, subject, "SubscriptionExpiring", vars,
+                    "subscription.expiring:" + toEmail + ":" + planCategory + ":" + daysLeft);
+            log.info("Subscription expiry warning email sent ({} days left)", daysLeft);
         } catch (Exception e) {
             log.error("Failed to send subscription expiry warning email to: {}", toEmail, e);
         }
@@ -158,6 +174,61 @@ public class EmailService {
         boolean hasSendGrid = sendGridApiKey != null && !sendGridApiKey.isBlank();
         boolean hasSmtp = smtpUsername != null && !smtpUsername.isBlank();
         return hasSendGrid || hasSmtp;
+    }
+
+    /**
+     * Sends one transactional email at most once per business event.
+     *
+     * <p>{@code idempotencyKey} identifies the committed event, not the request: a webhook replay
+     * or a client retry reuses it and delivers nothing, while a genuinely repeated user action
+     * (another password-reset request) supplies a new one and mails again.
+     *
+     * <p>Delivery failures are recorded and swallowed. Email must never roll back the payment,
+     * listing or account change that triggered it.
+     *
+     * @param idempotencyKey event key; when blank the send proceeds undeduplicated
+     */
+    @Async
+    public void sendTransactionalHtmlEmail(String toEmail, String subject, String htmlContent,
+                                           String templateName, String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            log.warn("Transactional email to {} ({}) has no idempotency key — sending undeduplicated",
+                    toEmail, templateName);
+            try {
+                sendHtmlEmail(toEmail, subject, htmlContent);
+            } catch (Exception e) {
+                log.error("Failed to send un-keyed transactional email to {}: {}", toEmail, e.getMessage());
+            }
+            return;
+        }
+
+        com.landgo.userservice.entity.EmailDelivery delivery =
+                deliveryLedger.claim(idempotencyKey, toEmail, subject, templateName).orElse(null);
+        if (delivery == null) {
+            return;
+        }
+
+        try {
+            sendHtmlEmail(toEmail, subject, htmlContent);
+            deliveryLedger.markSent(delivery);
+            log.info("Delivered {} email (key={})", templateName, idempotencyKey);
+        } catch (Exception e) {
+            deliveryLedger.markFailed(delivery, e.getMessage());
+            log.error("Permanent or transient failure delivering {} email (key={}): {}",
+                    templateName, idempotencyKey, e.getMessage());
+        }
+    }
+
+    /** Template-rendering counterpart of {@link #sendTransactionalHtmlEmail}. */
+    @Async
+    public void sendTransactionalTemplateEmail(String toEmail, String subject, String templateName,
+                                               Map<String, String> variables, String idempotencyKey) {
+        try {
+            sendTransactionalHtmlEmail(toEmail, subject, buildTemplateEmailHtml(templateName, variables),
+                    templateName, idempotencyKey);
+        } catch (IOException e) {
+            log.error("Failed to render template '{}' for {}: {}", templateName, toEmail, e.getMessage());
+        }
     }
 
     @Async

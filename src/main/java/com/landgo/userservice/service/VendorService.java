@@ -43,6 +43,9 @@ public class VendorService {
     private final PaymentServiceClient paymentServiceClient;
     private final EmailService emailService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.web.professional-dashboard-url:https://landgo.ca/marketplace/dashboard}")
+    private String professionalDashboardUrl;
+
     @Transactional
     public void incrementViewCount(UUID profileId) {
         vendorProfileRepository.incrementViewCount(profileId);
@@ -169,7 +172,14 @@ public class VendorService {
         try {
             java.util.Map<String, String> vars = new java.util.HashMap<>();
             vars.put("User", user.getFullName());
-            emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Submitted", "MarketplaceAppSubmitted", vars);
+            vars.put("appName", saved.getCompanyName() != null ? saved.getCompanyName() : user.getFullName());
+            vars.put("applicationId", saved.getId().toString());
+            vars.put("statusUrl", professionalDashboardUrl);
+            vars.put("dashboardUrl", professionalDashboardUrl);
+            // Keyed on the application, so re-saving a profile does not re-announce a submission.
+            emailService.sendTransactionalTemplateEmail(user.getEmail(),
+                    "LandGo - Professional Profile Submitted", "MarketplaceAppSubmitted", vars,
+                    "professional.submitted:" + saved.getId());
         } catch (Exception e) {
             log.error("Failed to send marketplace app submitted email for user {}", userId, e);
         }
@@ -279,19 +289,36 @@ public class VendorService {
             profile.setVerified(false);
         }
 
+        com.landgo.userservice.enums.VerificationStatus previousStatus = profile.getVerificationStatus();
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional verification updated for user: {} to {}", userId, status);
-        try {
-            java.util.Map<String, String> vars = new java.util.HashMap<>();
-            vars.put("User", user.getFullName());
-            if (status == com.landgo.userservice.enums.VerificationStatus.APPROVED) {
-                emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Approved", "MarketplaceAppReviewed", vars);
-            } else if (status == com.landgo.userservice.enums.VerificationStatus.REJECTED) {
-                vars.put("rejectionReason", notes != null ? notes : "Profile does not meet our guidelines.");
-                emailService.sendTemplateEmail(user.getEmail(), "LandGo - Professional Profile Rejection Notice", "MarketplaceAppRejected", vars);
+
+        // Only a real transition notifies. An admin re-saving the same decision, or a profile
+        // edit that leaves the status alone, must not re-announce an approval or rejection.
+        if (previousStatus != status) {
+            try {
+                java.util.Map<String, String> vars = new java.util.HashMap<>();
+                vars.put("User", user.getFullName());
+                vars.put("appName", saved.getCompanyName() != null ? saved.getCompanyName() : user.getFullName());
+                vars.put("dashboardUrl", professionalDashboardUrl);
+                vars.put("profileUrl", professionalDashboardUrl);
+                String key = "professional." + status.name().toLowerCase() + ":" + saved.getId();
+
+                if (status == com.landgo.userservice.enums.VerificationStatus.APPROVED) {
+                    emailService.sendTransactionalTemplateEmail(user.getEmail(),
+                            "LandGo - Professional Profile Approved", "MarketplaceAppReviewed", vars, key);
+                } else if (status == com.landgo.userservice.enums.VerificationStatus.REJECTED) {
+                    vars.put("rejectionReason", notes != null && !notes.isBlank()
+                            ? notes
+                            : "Your profile does not yet meet our marketplace guidelines. "
+                                    + "Please review the details and resubmit.");
+                    vars.put("editUrl", professionalDashboardUrl);
+                    emailService.sendTransactionalTemplateEmail(user.getEmail(),
+                            "LandGo - Professional Profile Rejection Notice", "MarketplaceAppRejected", vars, key);
+                }
+            } catch (Exception e) {
+                log.error("Failed to send marketplace app reviewed email for user {}", userId, e);
             }
-        } catch (Exception e) {
-            log.error("Failed to send marketplace app reviewed email for user {}", userId, e);
         }
         return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
     }
@@ -355,20 +382,13 @@ public class VendorService {
             log.debug("Could not fetch planTier for vendor {}: {}", response.getUserId(), e.getMessage());
         }
 
+        // Signed whether the stored value is a key or a full bucket URL: the bucket is private,
+        // so an unsigned bucket URL answers 403 and renders as a broken logo.
         String logo = response.getCompanyLogo();
         if (logo != null && !logo.isBlank()) {
-            if (!logo.startsWith("http://") && !logo.startsWith("https://")) {
-                try {
-                    int expiryMinutes = 24 * 60; // 24 hours
-                    String signedUrl = s3PresignerService.generatePresignedReadUrl(logo, expiryMinutes);
-                    response.setCompanyLogoUrl(signedUrl);
-                    response.setCompanyLogoExpiresAt(java.time.LocalDateTime.now().plusHours(24));
-                } catch (Exception e) {
-                    log.error("Failed to generate presigned URL for company logo: {}", logo, e);
-                }
-            } else {
-                response.setCompanyLogoUrl(logo);
-            }
+            int expiryMinutes = 24 * 60;
+            response.setCompanyLogoUrl(s3PresignerService.toViewableUrl(logo, expiryMinutes));
+            response.setCompanyLogoExpiresAt(java.time.LocalDateTime.now().plusMinutes(expiryMinutes));
         }
         return response;
     }

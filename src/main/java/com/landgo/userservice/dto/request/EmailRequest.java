@@ -21,4 +21,15 @@ public class EmailRequest {
     private Map<String, String> variables;
 
     private String htmlBody;
+
+    /**
+     * Key identifying the committed business event this email belongs to.
+     *
+     * <p>Callers must reuse it when retrying so a replay delivers nothing. Omitting it sends
+     * undeduplicated, which is only correct for genuinely one-off mail.
+     */
+    private String idempotencyKey;
+
+    /** Originating domain event id, recorded alongside the delivery attempt for tracing. */
+    private String eventId;
 }

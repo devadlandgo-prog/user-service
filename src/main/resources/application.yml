@@ -36,6 +36,14 @@ spring:
       mail.smtp.starttls.enable: true
 
 app:
+  verification:
+    # One product-wide code length for email and SMS alike. Six matches the
+    # Twilio Verify service default, which is configured in the Twilio console
+    # rather than here — changing this to 4 means changing that setting too, or
+    # the mismatch this replaced simply comes back.
+    code-length: ${VERIFICATION_CODE_LENGTH:6}
+    email-code-expiry-minutes: ${VERIFICATION_CODE_EXPIRY_MINUTES:10}
+    reset-code-expiry-minutes: ${PASSWORD_RESET_CODE_EXPIRY_MINUTES:60}
   jwt:
     secret: ${JWT_SECRET:myVeryLongSecretKeyThatIsAtLeast256BitsForHS256Algorithm2024!}
     access-token-expiration: 3600000
@@ -43,6 +51,9 @@ app:
   services:
     core-service-url: ${CORE_SERVICE_URL:http://localhost:8082}
     payment-service-url: ${PAYMENT_SERVICE_URL:http://localhost:8083}
+  # Links placed in account and marketplace emails.
+  web:
+    professional-dashboard-url: ${WEB_PROFESSIONAL_DASHBOARD_URL:https://landgo.ca/marketplace/dashboard}
   mail:
     from: ${MAIL_FROM:noreply@landgo.com}
     reset-password-url: ${RESET_PASSWORD_URL:http://localhost:3000/reset-password}

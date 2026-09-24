@@ -125,7 +125,10 @@ class NewsletterSenderTest {
         private String failureMessage;
 
         FakeEmailService() {
-            super(null, null);
+            // Null collaborators are safe here because every send path used by these tests is
+            // overridden below; the delivery ledger in particular is never reached, since
+            // newsletter delivery reports per-recipient outcomes rather than deduplicating.
+            super(null, null, null);
         }
 
         void failFor(String recipient, String message) {

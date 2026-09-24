@@ -72,17 +72,32 @@ public class AuthController {
     }
 
     @PostMapping("/resend-verification")
-    @Operation(summary = "Resend email verification code")
-    public ResponseEntity<ApiResponse<Void>> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
-        authService.resendVerificationCode(request);
-        return ResponseEntity.ok(ApiResponse.success("Verification code sent", null));
+    @Operation(summary = "Resend email verification code",
+            description = "Always reports success so the response cannot be used to discover which "
+                    + "addresses have accounts. The returned challenge tells the client how many "
+                    + "digits to collect.")
+    public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.VerificationChallengeResponse>>
+            resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Verification code sent",
+                authService.resendVerificationCode(request)));
+    }
+
+    @GetMapping("/verification-policy")
+    @Operation(summary = "Verification code configuration",
+            description = "Digits per code and how long one lasts. Clients size their code-entry "
+                    + "boxes from this rather than hardcoding a length.")
+    public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.VerificationChallengeResponse>>
+            verificationPolicy() {
+        return ResponseEntity.ok(ApiResponse.success(authService.getVerificationPolicy()));
     }
 
     @PostMapping("/forgot-password")
     @Operation(summary = "Request forgot-password verification code")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        authService.forgotPassword(request);
-        return ResponseEntity.ok(ApiResponse.success("If an account exists, a verification code has been sent", null));
+    public ResponseEntity<ApiResponse<com.landgo.userservice.dto.response.VerificationChallengeResponse>>
+            forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account exists, a verification code has been sent",
+                authService.forgotPassword(request)));
     }
 
     @PostMapping("/forgot-password/verify-code")

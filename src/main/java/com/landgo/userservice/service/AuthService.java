@@ -63,10 +63,20 @@ public class AuthService {
     private final VendorProfileRepository vendorProfileRepository;
     private final S3PresignerService s3PresignerService;
     private final PaymentServiceClient paymentServiceClient;
+    private final VerificationCodePolicy verificationCodePolicy;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
     private static final int MAX_VERIFICATION_ATTEMPTS = 5;
+
+    /**
+     * Lifetime of the signed URLs returned with a user profile.
+     *
+     * <p>Long enough that a session does not have images expire underneath it, short enough that a
+     * leaked URL is not a lasting grant. Clients should re-read the profile rather than caching
+     * the URL past this.
+     */
+    private static final int PROFILE_MEDIA_URL_MINUTES = 12 * 60;
 
     // ==========================================
     // REGISTER
@@ -448,21 +458,52 @@ public class AuthService {
     }
 
     @Transactional
-    public void resendVerificationCode(ResendVerificationRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("No account found with this email address"));
-        if (user.isEmailVerified())
-            throw new BadRequestException("Email is already verified", "AUTH_ALREADY_VERIFIED");
-        generateAndSendVerificationCode(user);
-        if (user.getPhone() != null && !user.getPhone().isBlank()) {
-            try {
-                twilioService.sendVerificationCode(user.getPhone());
-                log.info("Signup OTP resent via SMS to: {}", user.getPhone());
-            } catch (Exception e) {
-                log.error("Failed to resend signup OTP via SMS to " + user.getPhone(), e);
+    /**
+     * Re-issues the account-verification code.
+     *
+     * <p>Returns the same challenge shape whether or not the address belongs to an account: the
+     * previous 404 let anyone enumerate registered email addresses. A code is only actually sent
+     * for an existing, still-unverified account.
+     */
+    public com.landgo.userservice.dto.response.VerificationChallengeResponse resendVerificationCode(
+            ResendVerificationRequest request) {
+        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
+        String channel = "EMAIL";
+
+        if (user == null) {
+            log.info("Verification resend requested for an address with no account");
+        } else if (user.isEmailVerified()) {
+            log.info("Verification resend requested for an already-verified account: {}", user.getId());
+        } else {
+            generateAndSendVerificationCode(user);
+            if (user.getPhone() != null && !user.getPhone().isBlank()) {
+                try {
+                    twilioService.sendVerificationCode(user.getPhone());
+                    channel = "BOTH";
+                    log.info("Signup OTP resent via SMS to user {}", user.getId());
+                } catch (Exception e) {
+                    log.error("Failed to resend signup OTP via SMS for user " + user.getId(), e);
+                }
             }
+            log.info("Verification code resent for user: {}", user.getId());
         }
-        log.info("Verification code resent to: {}", user.getEmail());
+
+        return verificationChallenge(channel, verificationCodePolicy.getEmailCodeExpiryMinutes());
+    }
+
+    /** Describes the code a client should now collect. */
+    public com.landgo.userservice.dto.response.VerificationChallengeResponse verificationChallenge(
+            String channel, int expiryMinutes) {
+        return com.landgo.userservice.dto.response.VerificationChallengeResponse.builder()
+                .codeLength(verificationCodePolicy.getCodeLength())
+                .expiresInMinutes(expiryMinutes)
+                .channel(channel)
+                .build();
+    }
+
+    /** The current verification-code configuration, for clients sizing a code-entry screen. */
+    public com.landgo.userservice.dto.response.VerificationChallengeResponse getVerificationPolicy() {
+        return verificationChallenge("EMAIL", verificationCodePolicy.getEmailCodeExpiryMinutes());
     }
 
     // ==========================================
@@ -470,12 +511,18 @@ public class AuthService {
     // ==========================================
 
     @Transactional
-    public void forgotPassword(ForgotPasswordRequest request) {
+    public com.landgo.userservice.dto.response.VerificationChallengeResponse forgotPassword(
+            ForgotPasswordRequest request) {
         String identifier = request.getEmailOrPhone();
+        com.landgo.userservice.dto.response.VerificationChallengeResponse challenge =
+                verificationChallenge(isEmailIdentifier(identifier) ? "EMAIL" : "SMS",
+                        verificationCodePolicy.getResetCodeExpiryMinutes());
+
         User user = userRepository.findByIdentifier(identifier).orElse(null);
         if (user == null || user.getAuthProvider() != AuthProvider.EMAIL) {
-            log.info("Forgot password requested for non-existent or OAuth user: {}", identifier);
-            return;
+            // Same response either way: whether an account exists must not be observable.
+            log.info("Forgot password requested for non-existent or OAuth user");
+            return challenge;
         }
 
         if (isEmailIdentifier(identifier)) {
@@ -484,21 +531,25 @@ public class AuthService {
             PasswordResetToken resetToken = PasswordResetToken.builder()
                     .token(code)
                     .user(user)
-                    .expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES))
+                    // Matches the 60 minutes the ForgotPassword email states, rather than the
+                    // shorter account-verification window it was sharing.
+                    .expiryDate(LocalDateTime.now().plusMinutes(verificationCodePolicy.getResetCodeExpiryMinutes()))
                     .build();
             passwordResetTokenRepository.save(resetToken);
-            emailService.sendPasswordResetCodeEmail(user.getEmail(), user.getFirstName(), code);
-            log.info("Password reset code generated via email for user: {}", user.getEmail());
-            return;
+            emailService.sendPasswordResetCodeEmail(user.getEmail(), user.getFirstName(), code,
+                    verificationCodePolicy.getResetCodeExpiryMinutes());
+            log.info("Password reset code generated via email for user: {}", user.getId());
+            return challenge;
         }
 
         if (user.getPhone() == null || user.getPhone().isBlank()) {
             log.info("Forgot password requested with phone, but no phone on profile for user: {}", user.getId());
-            return;
+            return challenge;
         }
 
         twilioService.sendVerificationCode(user.getPhone());
         log.info("Password reset code sent via SMS for user: {}", user.getId());
+        return challenge;
     }
 
     @Transactional(readOnly = true)
@@ -618,6 +669,22 @@ public class AuthService {
         return toUserResponseWithProfessionalProfile(saved);
     }
 
+    /**
+     * Sets the mirrored purchased-credit total.
+     *
+     * <p>An absolute set rather than an increment: payment-service recomputes the total from its
+     * ledger, so a retried mirror call converges instead of double-counting.
+     */
+    @Transactional
+    public UserResponse setListingCreditsPurchased(UUID userId, int creditsPurchased) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        user.setMaxListings(Math.max(0, creditsPurchased));
+        User saved = userRepository.save(user);
+        log.info("Mirrored purchased listing credit total {} onto user {}", creditsPurchased, userId);
+        return toUserResponseWithProfessionalProfile(saved);
+    }
+
     @Transactional
     public void deleteAccount(UserPrincipal userPrincipal) {
         User user = userRepository.findById(userPrincipal.getId())
@@ -633,18 +700,27 @@ public class AuthService {
     // HELPERS
     // ==========================================
 
+    /**
+     * Issues a fresh account-verification code, superseding any unused one.
+     *
+     * <p>Length and expiry both come from {@link VerificationCodePolicy} so the email, the SMS and
+     * the client's input boxes agree.
+     */
     private void generateAndSendVerificationCode(User user) {
         emailVerificationTokenRepository.invalidateAllTokensForUser(user);
-        String code = String.valueOf(SECURE_RANDOM.nextInt(9000) + 1000);
+        String code = verificationCodePolicy.generateNumericCode();
         EmailVerificationToken token = EmailVerificationToken.builder()
-                .code(code).user(user).expiryDate(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRY_MINUTES)).build();
+                .code(code).user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(verificationCodePolicy.getEmailCodeExpiryMinutes()))
+                .build();
         emailVerificationTokenRepository.save(token);
-        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code, token.getId().toString());
+        emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), code, token.getId().toString(),
+                verificationCodePolicy.getEmailCodeExpiryMinutes());
     }
 
     private String generateUniquePasswordResetCode() {
         for (int i = 0; i < 10; i++) {
-            String code = String.valueOf(SECURE_RANDOM.nextInt(9000) + 1000);
+            String code = verificationCodePolicy.generateNumericCode();
             if (passwordResetTokenRepository.findByTokenAndUsedFalse(code).isEmpty()) {
                 return code;
             }
@@ -680,7 +756,7 @@ public class AuthService {
         user = userRepository.save(user);
         emailVerificationTokenRepository.invalidateAllTokensForUser(user);
         log.info("Email verified successfully for user: {}", user.getEmail());
-        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFullName(), user.getId());
         return userMapper.toResponse(user);
     }
 
@@ -850,23 +926,21 @@ public class AuthService {
             user = userRepository.save(user);
         }
         UserResponse response = userMapper.toResponse(user);
+        // The images bucket is private. A stored key — or a stored bucket URL, which several
+        // paths persisted — is unloadable as-is and shows up client-side as a broken image, so
+        // every media reference is re-signed on the way out.
+        response.setProfileImageUrl(
+                s3PresignerService.toViewableUrl(user.getProfileImageUrl(), PROFILE_MEDIA_URL_MINUTES));
         if (user.isProfessional()) {
             vendorProfileRepository.findByUser(user)
                     .ifPresent(profile -> {
                         response.setCompanyLogo(profile.getCompanyLogo());
                         String logo = profile.getCompanyLogo();
                         if (logo != null && !logo.isBlank()) {
-                            if (!logo.startsWith("http://") && !logo.startsWith("https://")) {
-                                try {
-                                    String signedUrl = s3PresignerService.generatePresignedReadUrl(logo, 24 * 60);
-                                    response.setCompanyLogoUrl(signedUrl);
-                                    response.setCompanyLogoExpiresAt(LocalDateTime.now().plusHours(24));
-                                } catch (Exception e) {
-                                    log.error("Failed to generate presigned URL for user response logo: {}", logo, e);
-                                }
-                            } else {
-                                response.setCompanyLogoUrl(logo);
-                            }
+                            response.setCompanyLogoUrl(
+                                    s3PresignerService.toViewableUrl(logo, PROFILE_MEDIA_URL_MINUTES));
+                            response.setCompanyLogoExpiresAt(
+                                    LocalDateTime.now().plusMinutes(PROFILE_MEDIA_URL_MINUTES));
                         }
                         response.setSpecialization(profile.getSpecialization());
                         response.setYearsOfExperience(profile.getYearsOfExperience());
