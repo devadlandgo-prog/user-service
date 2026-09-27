@@ -6,5 +6,5 @@ import lombok.*;
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class ForgotPasswordVerifyRequest {
     @NotBlank private String emailOrPhone;
-    @NotBlank @Pattern(regexp = "^[0-9]{4}$", message = "Code must be 4 digits") private String code;
+    @NotBlank @Pattern(regexp = "^[0-9]{4,8}$", message = "Verification code must be 4 to 8 digits") private String code;
 }
