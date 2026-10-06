@@ -31,6 +31,10 @@ public class EmailService {
     private final RestTemplate restTemplate;
     private final EmailDeliveryLedger deliveryLedger;
 
+    /** {{name}} or ${name} left in a rendered template — i.e. a variable nobody supplied. */
+    private static final java.util.regex.Pattern UNSUBSTITUTED =
+            java.util.regex.Pattern.compile("\\{\\{[A-Za-z0-9_]+}}|\\$\\{[A-Za-z0-9_]+}");
+
     @Value("${app.mail.from:noreply@landgo.ca}")
     private String fromEmail;
 
@@ -42,9 +46,6 @@ public class EmailService {
 
     @Value("${app.mail.logo-url:https://landgo.app/logo_with_tagline.png}")
     private String logoUrl;
-
-    @Value("${app.mail.verification-template:email-templates/verification-email.html}")
-    private String verificationTemplatePath;
 
     @Value("${app.mail.dashboard-url:https://landgo.ca/dashboard}")
     private String dashboardUrl;
@@ -79,22 +80,6 @@ public class EmailService {
         vars.put("expiryMinutes", String.valueOf(expiryMinutes));
         sendTransactionalTemplateEmail(toEmail, "LandGo - Verify Your Email Address", "EmailVerification",
                 vars, "auth.verify:" + verificationToken);
-    }
-
-    @Async
-    public void sendPasswordResetEmail(String toEmail, String userName, String token) {
-        try {
-            String resetLink = resetPasswordBaseUrl + "?token=" + token;
-            java.util.Map<String, String> vars = new java.util.HashMap<>();
-            vars.put("User", userName);
-            vars.put("verificationCode", token);
-            vars.put("resetUrl", resetLink);
-            sendTemplateEmail(toEmail, "LandGo - Password Reset Request", "ForgotPassword", vars);
-            log.info("Password reset email sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send password reset email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send password reset email", e);
-        }
     }
 
     /**
@@ -139,6 +124,7 @@ public class EmailService {
             vars.put("User", userName);
             vars.put("planName", planCategory);
             vars.put("daysLeft", String.valueOf(daysLeft));
+            vars.put("dashboardUrl", dashboardUrl);
             // One warning per recipient, plan and threshold: the job runs daily and must not
             // re-send the same reminder if it is retried or the window is re-scanned.
             sendTransactionalTemplateEmail(toEmail, subject, "SubscriptionExpiring", vars,
@@ -274,7 +260,28 @@ public class EmailService {
                 template = template.replace("${" + key + "}", value);
             }
         }
+        warnOnUnsubstitutedPlaceholders(templateName, template);
         return template;
+    }
+
+    /**
+     * Logs any placeholder the caller did not supply a value for.
+     *
+     * <p>Substitution here is plain string replacement, so a placeholder nobody fills is simply
+     * mailed out as-is and nothing fails. The verification email shipped its design-preview code
+     * to real users for weeks because of exactly that silence: the template had no placeholder at
+     * all, so the real code was generated, stored, checked against — and never shown. One WARN per
+     * send is cheap next to an auth email the recipient cannot act on.
+     */
+    private void warnOnUnsubstitutedPlaceholders(String templateName, String rendered) {
+        java.util.regex.Matcher matcher = UNSUBSTITUTED.matcher(rendered);
+        java.util.Set<String> leftovers = new java.util.LinkedHashSet<>();
+        while (matcher.find()) {
+            leftovers.add(matcher.group());
+        }
+        if (!leftovers.isEmpty()) {
+            log.warn("Template '{}' was sent with unsubstituted placeholders: {}", templateName, leftovers);
+        }
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {
