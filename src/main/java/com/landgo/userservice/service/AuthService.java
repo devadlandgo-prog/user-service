@@ -321,6 +321,7 @@ public class AuthService {
         if (hasActiveSub && !user.isProfessional()) {
             user.setProfessional(true);
             user = userRepository.save(user);
+            ensureVendorProfile(user);
         }
 
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
@@ -919,11 +920,47 @@ public class AuthService {
         return toUserResponseWithProfessionalProfile(user);
     }
 
+    /**
+     * Guarantees a professional has a profile row to be reviewed.
+     *
+     * <p>Buying a market_profession subscription is what flags a user professional, and that alone
+     * used to be enough to list them in the admin marketplace. The profile row was only created
+     * later, when they filled in the Market Profession form — so between paying and filling it in,
+     * an admin could open them, press Approve, and get "VendorProfile not found with userId", a
+     * message that describes our data gap rather than anything the admin can act on.
+     *
+     * <p>The shell is deliberately empty and unverified: it is a thing to review, not an approval.
+     * It stays out of the public directory, which selects on {@code verified = true}.
+     */
+    private void ensureVendorProfile(User user) {
+        if (vendorProfileRepository.findByUser(user).isPresent()) {
+            return;
+        }
+        var profile = new com.landgo.userservice.entity.VendorProfile();
+        profile.setUser(user);
+        profile.setCompanyName(user.getFullName() != null && !user.getFullName().isBlank()
+                ? user.getFullName()
+                : "TBD");
+        profile.setBusinessAddress("TBD");
+        profile.setBusinessCity("TBD");
+        profile.setBusinessState("TBD");
+        profile.setBusinessZipCode("TBD");
+        profile.setBusinessCountry("TBD");
+        profile.setVerified(false);
+        profile.setVerificationStatus(com.landgo.userservice.enums.VerificationStatus.PENDING);
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            profile.setPhoneNumber(user.getPhone());
+        }
+        vendorProfileRepository.save(profile);
+        log.info("Created a pending professional profile for user {} on subscription activation", user.getId());
+    }
+
     private UserResponse toUserResponseWithProfessionalProfile(User user) {
         boolean hasActiveSub = paymentServiceClient.hasActiveSubscription(user.getId(), "market_profession");
         if (hasActiveSub && !user.isProfessional()) {
             user.setProfessional(true);
             user = userRepository.save(user);
+            ensureVendorProfile(user);
         }
         UserResponse response = userMapper.toResponse(user);
         // The images bucket is private. A stored key — or a stored bucket URL, which several

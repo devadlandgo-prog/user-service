@@ -278,18 +278,23 @@ public class VendorService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         VendorProfile profile = vendorProfileRepository.findByUser(user)
-                .orElseThrow(() -> new ResourceNotFoundException("VendorProfile", "userId", userId));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "This professional has not submitted a profile yet, so there is nothing to review."));
+
+        // Read before the setter below overwrites it. Captured after, this was always equal to
+        // the incoming status, so the "only a real transition notifies" guard was never true and
+        // no professional was ever told they had been approved or rejected.
+        com.landgo.userservice.enums.VerificationStatus previousStatus = profile.getVerificationStatus();
 
         profile.setVerificationStatus(status);
         profile.setVerificationNotes(notes);
-        
+
         if (status == com.landgo.userservice.enums.VerificationStatus.APPROVED) {
             profile.setVerified(true);
         } else {
             profile.setVerified(false);
         }
 
-        com.landgo.userservice.enums.VerificationStatus previousStatus = profile.getVerificationStatus();
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional verification updated for user: {} to {}", userId, status);
 
