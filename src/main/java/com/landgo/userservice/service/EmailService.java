@@ -44,7 +44,16 @@ public class EmailService {
     @Value("${app.mail.verify-link-url:http://localhost:3000/verify-email}")
     private String verifyLinkBaseUrl;
 
-    @Value("${app.mail.logo-url:https://landgo.app/logo_with_tagline.png}")
+    /**
+     * Header logo for every template.
+     *
+     * <p>Must be a PNG or JPEG on a host that resolves publicly and needs no credentials: an
+     * email client fetches it directly, with no session and no retry. The previous default
+     * pointed at landgo.app, a domain we do not own and which does not resolve, so the logo was
+     * a broken image in every email ever sent. SVG is not an option either - Gmail and Outlook
+     * drop it - which is why this is a rasterised copy rather than public/landgo-logo.svg.
+     */
+    @Value("${app.mail.logo-url:https://app.landgo.ca/landgo-logo-email.png}")
     private String logoUrl;
 
     @Value("${app.mail.dashboard-url:https://landgo.ca/dashboard}")
