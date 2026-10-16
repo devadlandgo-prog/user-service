@@ -42,6 +42,7 @@ public class VendorService {
     private final S3PresignerService s3PresignerService;
     private final PaymentServiceClient paymentServiceClient;
     private final EmailService emailService;
+    private final ExpertiseSelectionService expertiseSelectionService;
 
     @org.springframework.beans.factory.annotation.Value("${app.web.professional-dashboard-url:https://landgo.ca/marketplace/dashboard}")
     private String professionalDashboardUrl;
@@ -77,6 +78,7 @@ public class VendorService {
             VendorProfile profile = vendorProfileMapper.toEntity(request);
             profile.setId(user.getId());
             profile.setUser(user);
+            applyProfessionalProfileFields(profile, request, user.getId());
             if (!StringUtils.hasText(profile.getPhoneNumber())) {
                 profile.setPhoneNumber(user.getPhone());
             }
@@ -145,11 +147,37 @@ public class VendorService {
         VendorProfile profile = vendorProfileMapper.toEntity(request);
         profile.setId(user.getId());
         profile.setUser(user);
-        
+        applyProfessionalProfileFields(profile, request, user.getId());
+
         VendorProfile saved = vendorProfileRepository.save(profile);
         log.info("Professional profile created for user: {}", user.getId());
 
         return enrichVendorResponse(vendorProfileMapper.toResponse(saved));
+    }
+
+    /**
+     * Writes the professional details the registration mapper leaves alone.
+     *
+     * <p>{@code specialization}, {@code serviceArea}, {@code yearsOfExperience} and {@code bio} are
+     * all required by {@link ProfessionalRegisterRequest} and were all being validated as non-empty
+     * and then discarded: the mapper ignores them and nothing else set them, so every professional
+     * registered with an empty profile and had to re-enter the same fields through a profile edit.
+     *
+     * <p>Expertise goes through {@link ExpertiseSelectionService} rather than straight onto the
+     * entity, so the plan's allowance is enforced on the server and the stored values are the
+     * catalogue's own spellings.
+     */
+    private void applyProfessionalProfileFields(VendorProfile profile, ProfessionalRegisterRequest request, UUID userId) {
+        profile.setSpecialization(expertiseSelectionService.resolveForPersist(userId, request.getSpecialization()));
+        if (request.getServiceArea() != null) {
+            profile.setServiceArea(request.getServiceArea());
+        }
+        if (request.getYearsOfExperience() != null) {
+            profile.setYearsOfExperience(request.getYearsOfExperience());
+        }
+        if (StringUtils.hasText(request.getBio())) {
+            profile.setBio(request.getBio());
+        }
     }
 
     @Transactional

@@ -54,14 +54,57 @@ public class PaymentServiceClient {
             }
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
-            if (response != null && response.get("planType") instanceof String) {
-                String planType = (String) response.get("planType");
+            if (response == null) {
+                return null;
+            }
+            // payment-service wraps this one in a "data" envelope. Reading only the top level meant
+            // every lookup returned null, so a professional's plan tier never resolved.
+            Object body = response.get("data") instanceof Map<?, ?> nested ? nested.get("planType") : response.get("planType");
+            if (body instanceof String planType) {
                 return "NONE".equalsIgnoreCase(planType) ? null : planType;
             }
             return null;
         } catch (RestClientException e) {
             log.warn("payment-service plan tier unavailable for {}/category={}: {}", userId, category, e.getMessage());
             return null;
+        }
+    }
+
+    /**
+     * Expertise allowance for the user's active market profession subscription.
+     *
+     * <p>Returns {@link ExpertiseEntitlement#unavailable()} when payment-service cannot be reached.
+     * That is deliberately not the same as an allowance of zero: refusing a registration because a
+     * sibling service is down would be the wrong failure, and letting it through unchecked would be
+     * worse, so the caller decides.
+     */
+    public ExpertiseEntitlement getExpertiseEntitlement(UUID userId) {
+        try {
+            String url = paymentServiceUrl + "/internal/subscriptions/user/" + userId + "/expertise-limit";
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+            if (response == null) {
+                return ExpertiseEntitlement.unavailable();
+            }
+            boolean active = Boolean.TRUE.equals(response.get("active"));
+            boolean unlimited = Boolean.TRUE.equals(response.get("unlimited"));
+            Integer limit = response.get("maxExpertiseSelections") instanceof Number n ? n.intValue() : null;
+            return new ExpertiseEntitlement(true, active, unlimited, limit);
+        } catch (RestClientException e) {
+            log.warn("payment-service expertise entitlement unavailable for {}: {}", userId, e.getMessage());
+            return ExpertiseEntitlement.unavailable();
+        }
+    }
+
+    /**
+     * @param known     false when payment-service could not be reached, so nothing here is a fact
+     * @param active    whether a live paid market profession subscription backs the allowance
+     * @param unlimited whether the plan grants unlimited selections
+     * @param limit     the cap when it is a number; null when unlimited or unknown
+     */
+    public record ExpertiseEntitlement(boolean known, boolean active, boolean unlimited, Integer limit) {
+        public static ExpertiseEntitlement unavailable() {
+            return new ExpertiseEntitlement(false, false, false, null);
         }
     }
 }

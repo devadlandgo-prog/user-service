@@ -64,6 +64,7 @@ public class AuthService {
     private final S3PresignerService s3PresignerService;
     private final PaymentServiceClient paymentServiceClient;
     private final VerificationCodePolicy verificationCodePolicy;
+    private final ExpertiseSelectionService expertiseSelectionService;
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int VERIFICATION_CODE_EXPIRY_MINUTES = 15;
@@ -366,7 +367,12 @@ public class AuthService {
             var profileEntity = profile.get();
             if (request.getCompanyName() != null) profileEntity.setCompanyName(request.getCompanyName());
             if (request.getLicenseNumber() != null) profileEntity.setBusinessLicense(request.getLicenseNumber());
-            if (request.getSpecialization() != null) profileEntity.setSpecialization(request.getSpecialization());
+            // Same allowance check as registration: editing a profile is the other way to end up
+            // holding more areas of expertise than the plan grants.
+            if (request.getSpecialization() != null) {
+                profileEntity.setSpecialization(
+                        expertiseSelectionService.resolveForPersist(user.getId(), request.getSpecialization()));
+            }
             if (request.getYearsOfExperience() != null) profileEntity.setYearsOfExperience(request.getYearsOfExperience());
             if (request.getServiceArea() != null) profileEntity.setServiceArea(request.getServiceArea());
             if (request.getCertifications() != null) profileEntity.setCertifications(mapCertifications(request.getCertifications()));
