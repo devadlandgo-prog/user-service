@@ -24,6 +24,11 @@ import java.util.UUID;
  * on the server checked it, so a direct API call could claim any number of categories, and an admin
  * changing a plan could not change what a professional was allowed to pick. The allowance now comes
  * from payment-service.
+ *
+ * <p>A live professional subscription is required: expertise is a paid entitlement, so no plan
+ * means no allowance to spend. Nothing here trims or deletes an existing selection - a subscriber
+ * who downgrades keeps what they saved and is asked to fit the new allowance the next time they
+ * submit, which is what {@code EXPERTISE_LIMIT_EXCEEDED} tells them to do.
  */
 @Service
 @RequiredArgsConstructor
@@ -60,12 +65,14 @@ public class ExpertiseSelectionService {
         }
 
         if (!entitlement.active()) {
-            // No live professional subscription. Mobile gates the form on a purchase, and whether
-            // the server should also refuse here depends on whether a profile may be created before
-            // a plan is bought - a product decision, so this only records the case rather than
-            // introducing a block that could break onboarding.
-            log.info("Expertise allowance not enforced for {}: no active market_profession subscription", userId);
-            return canonical;
+            // Expertise is a paid entitlement, so without a live plan there is no allowance to
+            // spend and the write is refused rather than recorded. This is the server half of the
+            // gate mobile already puts in front of the form: a profile cannot be created or its
+            // expertise edited until a professional plan is active.
+            throw new ApiException(
+                    "An active professional subscription is required to select areas of expertise",
+                    HttpStatus.FORBIDDEN,
+                    "PROFESSIONAL_SUBSCRIPTION_REQUIRED");
         }
 
         if (entitlement.unlimited()) {
