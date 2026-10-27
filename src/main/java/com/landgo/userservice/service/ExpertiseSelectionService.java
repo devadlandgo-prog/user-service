@@ -29,6 +29,11 @@ import java.util.UUID;
  * means no allowance to spend. Nothing here trims or deletes an existing selection - a subscriber
  * who downgrades keeps what they saved and is asked to fit the new allowance the next time they
  * submit, which is what {@code EXPERTISE_LIMIT_EXCEEDED} tells them to do.
+ *
+ * <p>Three outcomes a caller has to tell apart: {@code 403
+ * PROFESSIONAL_SUBSCRIPTION_REQUIRED} is a confirmed no - payment-service answered and the user has
+ * no live plan. {@code 503 EXPERTISE_VERIFICATION_UNAVAILABLE} is "ask again later" - it did not
+ * answer at all. {@code 400 EXPERTISE_LIMIT_EXCEEDED} is a plan they do hold, exceeded.
  */
 @Service
 @RequiredArgsConstructor
@@ -57,11 +62,19 @@ public class ExpertiseSelectionService {
         PaymentServiceClient.ExpertiseEntitlement entitlement = paymentServiceClient.getExpertiseEntitlement(userId);
 
         if (!entitlement.known()) {
-            // payment-service is unreachable. Refusing the registration would fail the user for an
-            // outage somewhere else, so the selection is accepted and recorded as unverified.
-            log.warn("Expertise allowance unverified for {} ({} selected): payment-service unavailable",
+            // payment-service did not answer, so the entitlement is unknown rather than absent.
+            //
+            // This used to accept the selection and log it as unverified, which made an outage the
+            // one window in which someone with no subscription at all could write expertise - the
+            // 403 below cannot run either when the entitlement cannot be fetched. Refusing is a
+            // retry, not a rejection, and the distinct status says so: nothing is persisted and the
+            // caller should offer "try again", not "buy a plan".
+            log.warn("Refusing expertise write for {} ({} selected): payment-service unavailable",
                     userId, canonical.size());
-            return canonical;
+            throw new ApiException(
+                    "We can't verify your subscription right now. Please try again in a moment.",
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "EXPERTISE_VERIFICATION_UNAVAILABLE");
         }
 
         if (!entitlement.active()) {
